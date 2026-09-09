@@ -15,6 +15,7 @@ before(async () => {
     '001_initial.sql',
     '002_integrations.sql',
     '003_notifications.sql',
+    '20260909200208_furever_security_hardening.sql',
   ])
     await db.exec(
       await readFile(new URL(`../db/migrations/${f}`, import.meta.url), 'utf8'),

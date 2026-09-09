@@ -4,7 +4,7 @@
 
 Create a dedicated Supabase project. In its SQL editor, apply `db/migrations/001_initial.sql`, then `002_integrations.sql`, followed by any later numbered migrations. These are PostgreSQL migrations, not Cloudflare D1 migrations. Do not run them on a database shared with unrelated apps without reviewing grants.
 
-Set `SUPABASE_URL` and the server-only `SUPABASE_SERVICE_ROLE_KEY`. Do not use a publishable key. RLS intentionally denies every browser role. All persistence passes through the authenticated application server.
+Set `SUPABASE_URL` and the server-only `SUPABASE_SECRET_KEY` from the dashboard's Secret keys section. Legacy `SUPABASE_SERVICE_ROLE_KEY` JWTs remain supported during migration. Do not use a publishable key. RLS intentionally denies every browser role. All persistence passes through the authenticated application server.
 
 The catalog and default event live in `lib/game/catalog.ts`; defaults are used until an admin saves the first configuration. User creation atomically initializes the player state. No administrator password or account is seeded.
 
@@ -19,7 +19,7 @@ http://localhost:3000/api/auth/callback
 https://YOUR_DEPLOYED_ORIGIN/api/auth/callback
 ```
 
-Set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, and the exact `APP_ORIGIN`, without a trailing slash. For the provisioned private Sites environment the origin is `https://furever.almond-yew-9230.chatgpt.site`. A webhook URL cannot replace OAuth credentials.
+Set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, and the exact `APP_ORIGIN`, without a trailing slash. For the provisioned private Sites environment the origin is `https://furever.imdhanxx.chatgpt.site`. Add the callback under **OAuth2 → Redirects**, not **Interactions Endpoint URL**. A webhook URL cannot replace OAuth credentials.
 
 Set `ADMIN_DISCORD_ID` to the administrator's immutable numeric user ID (Discord Developer Mode → Copy User ID). Only that verified identity gains administrative access. The app requests only the `identify` scope and never stores Discord access tokens.
 

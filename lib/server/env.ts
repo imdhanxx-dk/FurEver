@@ -16,8 +16,19 @@ export function required(env: Env, key: string) {
 export const configured = (e: Env) =>
   !!(
     e.SUPABASE_URL &&
-    e.SUPABASE_SERVICE_ROLE_KEY &&
+    (e.SUPABASE_SECRET_KEY || e.SUPABASE_SERVICE_ROLE_KEY) &&
     e.DISCORD_CLIENT_ID &&
     e.DISCORD_CLIENT_SECRET &&
     e.APP_ORIGIN
   );
+
+export function databaseHeaders(env: Env): Record<string, string> {
+  const key =
+    env.SUPABASE_SECRET_KEY ||
+    env.SUPABASE_SERVICE_ROLE_KEY ||
+    required(env, 'SUPABASE_SECRET_KEY');
+  // Modern secret keys are not JWTs. The gateway accepts them via apikey only.
+  return key.startsWith('sb_secret_')
+    ? { apikey: key }
+    : { apikey: key, Authorization: `Bearer ${key}` };
+}

@@ -2,3 +2,10 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
+overrides:
+  esbuild: 0.28.1
+minimumReleaseAgeExclude:
+  - react-dom@19.3.0
+  - react-server-dom-webpack@19.3.0
+  - react@19.3.0
+  - scheduler@0.28.0

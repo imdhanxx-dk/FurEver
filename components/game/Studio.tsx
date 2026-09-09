@@ -1,4 +1,5 @@
 'use client';
+import { readApiResponse } from '@/lib/client/api';
 import { useState } from 'react';
 import { Sparkles, Lock, Upload, Check } from 'lucide-react';
 import { progress } from '@/lib/game/progression';
@@ -156,11 +157,9 @@ export default function Studio(
                         },
                         body: form,
                       });
-                      const result = (await response.json()) as {
-                        error: string;
-                        message: string;
-                      };
-                      if (!response.ok) throw new Error(result.error);
+                      const result = await readApiResponse<{ message: string }>(
+                        response,
+                      );
                       p.notify(result.message);
                     } catch (e) {
                       p.notify(

@@ -8,10 +8,18 @@
 - Game/security unit tests, PostgreSQL integration tests (PGlite) and upload tests, including repeated rewards, atomic rollback, OAuth state consumption, forbidden client database access, Stripe signature validation, repeated fulfillment and repeated Mora approval.
 - Local HTTP opening screen and bootstrap endpoint.
 
-## Needs owner configuration and live end-to-end verification
+## Configured on the private hosted site
 
-- Discord OAuth app ID/secret, registered callback URLs and administrator Discord ID.
-- Dedicated Supabase project, migrations, service key and private storage for the Vercel adapter.
+- Discord OAuth application, registered callback, client secret and administrator Discord ID.
+- Dedicated Supabase database with all four migrations applied; server connection verified over HTTPS.
+- Server-only database access. Security advisors report no warnings or errors; browser roles intentionally have no table policies.
+- The client now handles expired site access and HTML gateway responses with a recovery message instead of a JSON parser error.
+- 35 automated checks pass. The updated production dependency audit reports no known vulnerabilities.
+
+## Still needs configuration or live end-to-end verification
+
+- Owner-completed Discord authorization round trip and a real save/reload session.
+- Private Supabase storage if moving to the Vercel adapter. The current Sites host uses R2.
 - OpenAI image API account/key and generation quota.
 - Stripe test account, signing secret and package review before any live payments.
 - Notification delivery to the supplied Discord webhook; no test message was sent during development.

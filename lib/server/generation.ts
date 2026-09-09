@@ -1,7 +1,7 @@
 import { Database } from './database';
 import { readPlayer, transact } from './game-service';
 import { ensure, textValue } from '../game/engine';
-import type { Env } from './env';
+import { databaseHeaders, type Env } from './env';
 // Only PNG uploads. Walk every chunk before accepting bytes; no SVG, URLs, or arbitrary formats.
 export function validatePng(bytes: Uint8Array) {
   ensure(
@@ -143,7 +143,7 @@ export async function generate(
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+            ...databaseHeaders(env),
             'Content-Type': 'image/png',
           },
           body: bytes,
@@ -202,7 +202,7 @@ export async function getAsset(db: Database, userId: string, id: string) {
   }
   const result = await fetch(
     `${env.SUPABASE_URL}/storage/v1/object/authenticated/${env.ASSET_BUCKET}/${rows[0].object_key}`,
-    { headers: { Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` } },
+    { headers: databaseHeaders(env) },
   );
   ensure(result.ok, 'Image unavailable.', 404);
   return new Response(result.body, {

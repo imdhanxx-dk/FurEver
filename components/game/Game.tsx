@@ -43,6 +43,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import Entry from './Entry';
+import { readApiResponse } from '@/lib/client/api';
 import Home from './Home';
 import Onboarding from './Onboarding';
 import { GameAudio, AUDIO_DEFAULTS, type AudioPrefs } from '@/lib/client/audio';
@@ -164,8 +165,11 @@ export default function Game() {
   const refresh = async () => {
     try {
       const r = await fetch('/api/bootstrap', { cache: 'no-store' });
-      const b = (await r.json()) as Bootstrap & { error?: string };
-      if (!r.ok) throw new Error(b.error);
+      const b = await readApiResponse<Bootstrap>(r);
+      if (typeof b.authenticated !== 'boolean')
+        throw new Error(
+          'The game service is temporarily unavailable. Please reload FurEver.',
+        );
       csrfRef.current = b.csrf || '';
       setData(b);
       setError('');
@@ -252,12 +256,7 @@ export default function Game() {
         throw new Error('You’re offline. Reconnect to continue.');
       response = await fetch(`/api/${endpoint}`, options);
     }
-    const result = (await response.json()) as Record<string, unknown>;
-    if (!response.ok)
-      throw new Error(
-        String(result.error || 'That action could not be completed.'),
-      );
-    return result;
+    return readApiResponse<Record<string, unknown>>(response);
   };
   const act = async (intent: Intent): Promise<GameResult | undefined> => {
     if (inFlight.current) return;
@@ -307,8 +306,8 @@ export default function Game() {
         <PawPrint size={48} />
         <h2>A little pause in the adventure.</h2>
         <p>{error}</p>
-        <button className="primary" onClick={() => void refresh()}>
-          Try again
+        <button className="primary" onClick={() => window.location.reload()}>
+          Reload FurEver
         </button>
       </div>
     );

@@ -1,20 +1,18 @@
 import { GameError } from '../game/engine';
-import { required, type Env } from './env';
+import { databaseHeaders, required, type Env } from './env';
 export class Database {
   constructor(public env: Env) {}
   async request<T = unknown>(
     path: string,
     options: RequestInit = {},
   ): Promise<T> {
-    const base = required(this.env, 'SUPABASE_URL'),
-      key = required(this.env, 'SUPABASE_SERVICE_ROLE_KEY');
+    const base = required(this.env, 'SUPABASE_URL');
     if (!base.startsWith('https://'))
       throw new Error('Supabase URL must use HTTPS');
     const response = await fetch(`${base}/rest/v1/${path}`, {
       ...options,
       headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
+        ...databaseHeaders(this.env),
         'Content-Type': 'application/json',
         ...options.headers,
       },
