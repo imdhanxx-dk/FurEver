@@ -31,18 +31,18 @@ Set `DISCORD_ADMIN_WEBHOOK_URL` as a secret. The owner-supplied webhook has been
 
 ## 4. Creative studio
 
-Set `AI_PROVIDER_API_KEY` in your host's encrypted environment settings. `AI_IMAGE_MODEL` defaults to `gpt-image-1`; choose an image model enabled for your account. Both image generation and editing use fixed official API endpoints. Avatar creation requires a PNG portrait. PNGs must be 64–2048 pixels per side and at most 4 MB; animated PNG/SVG/arbitrary URLs are rejected. Originals are not retained. Generated images are stored privately.
+Set `AI_PROVIDER_API_KEY` in your host's encrypted environment settings and `AI_STUDIO_ENABLED=true` to allow requests. Set the flag to `false` to pause creation without removing saved designs. `AI_IMAGE_MODEL` defaults to `gpt-image-2.5-flare`; choose an image model enabled for your account. Both image generation and editing use fixed official API endpoints. Avatar creation requires a PNG portrait. PNGs must be 64–2048 pixels per side and at most 4 MB; animated PNG/SVG/arbitrary URLs are rejected. Originals are not retained. Generated images are stored privately. New pet and fusion requests generate a twelve-part animation atlas. Candidates preview with the same renderer used at home; selection saves the atlas format and URL on the pet. Avatar requests remain portraits. Older portrait-only candidates are preserved.
 
 A generation reserves an attempt before contacting the provider. Failures count toward the five-attempt cap to prevent cost abuse; admins have unlimited attempts. A stale pending generation stops blocking another attempt after five minutes. If a provider result succeeds but persistence fails, inspect the job/object before taking further action; never blindly repeat a charged request. [OpenAI Images API](https://developers.openai.com/api/reference/resources/images).
 
-## 5. Stripe test mode, then launch review
+## 5. Mora-only game economy
 
-Set `STRIPE_SECRET_KEY` to a **test** key and create a webhook for `/api/payments/webhook`; set its signing secret as `STRIPE_WEBHOOK_SECRET`. Subscribe to `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Enable packages only after verifying account currency, displayed prices, test payment, failed payment, async payment, and repeated delivery behavior.
+Players use earned Pet Coins and the Mora exchange. The coin counter opens the Mora screen. The server rejects new real-money checkout requests with HTTP 410 regardless of package configuration. No Stripe credentials are needed for gameplay.
 
-Package amounts are integers in the smallest currency unit. Fulfillment checks the stored amount, currency, payment identity and paid status. The return URL never credits coins. Refunds/disputes are **not automated in this release**; reconcile and resolve them with an audited adjustment before enabling live purchases. [Stripe fulfillment](https://docs.stripe.com/checkout/fulfillment), [signature verification](https://docs.stripe.com/webhooks/signature).
+Legacy payment tables and signature-verified webhook settlement remain for historical records. They cannot open a new checkout. Mora approval remains an audited administrator operation and credits each request once. OpenAI billing is the owner's external service cost, separate from the in-game economy.
 
 ## 6. Hosts
 
 For Workers preview, copy `.env.example` to `.dev.vars`. For Next.js preview, copy to `.env.local` and run `pnpm dev:vercel`. Real secrets are ignored by Git. On hosted environments, set the same values in the host's secret manager. `APP_ORIGIN` must match the environment; do not reuse a production cookie origin on localhost.
 
-For production, configure backups, retention and alerting. Schedule removal of expired sessions/OAuth states and old rate-limit windows. Keep operation records for the applicable reward/payment retention window; deleting idempotency records too early can reopen replay paths. Use a separate staging database and separate Stripe test keys.
+For production, configure backups, retention and alerting. Schedule removal of expired sessions/OAuth states and old rate-limit windows. Keep operation records for the applicable reward/payment retention window; deleting idempotency records too early can reopen replay paths. Use a separate staging database.

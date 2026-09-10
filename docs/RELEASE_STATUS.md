@@ -1,38 +1,26 @@
-# Initial release status
+# FurEver private release status
 
-## Verified locally
+## September 2026 companion update
 
-- Strict TypeScript compilation.
-- Cloudflare Worker production bundle with a default fetch handler.
-- Vercel/Next.js production build.
-- Game/security unit tests, PostgreSQL integration tests (PGlite) and upload tests, including repeated rewards, atomic rollback, OAuth state consumption, forbidden client database access, Stripe signature validation, repeated fulfillment and repeated Mora approval.
-- Local HTTP opening screen and bootstrap endpoint.
+- Articulated canvas companion: independent paws, head, feet and tail; six facial states; grounded breathing, blinking, head tracking, stroking, high fives, tickling and distinct care clips.
+- Time-based animation with eased transitions, device-pixel-ratio cap, hidden-tab drawing suspension and reduced-motion support. Offline native-canvas compositions were visually inspected; this does not establish browser or phone frame rates.
+- Optional local microphone record/replay. Recording stops after 6.5 seconds, on page hide or on unmount. Audio is never uploaded and its object URL is released after playback.
+- Warm mint, honey and cream UI with a new moonlit cottage. Entry and onboarding use the same articulated companion.
+- Creative Studio key and enabled flag configured in encrypted hosting settings. Image requests use gpt-image-2.5-flare, medium quality, PNG output and private storage. One live Images API request succeeded and its new blue fox was assembled and visually inspected with the production renderer. The complete signed-in game save/selection round trip remains to be verified.
+- Real-money checkout closed at the server. Navigation uses Mora exchange; earned Pet Coins and normal shop transactions remain.
 
-## Configured on the private hosted site
+## Validation
 
-- Discord OAuth application, registered callback, client secret and administrator Discord ID.
-- Dedicated Supabase database with all four migrations applied; server connection verified over HTTPS.
-- Server-only database access. Security advisors report no warnings or errors; browser roles intentionally have no table policies.
-- The client now handles expired site access and HTML gateway responses with a recovery message instead of a JSON parser error.
-- 35 automated checks pass. The updated production dependency audit reports no known vulnerabilities.
+- 45 automated tests cover motion timing, hit zones, reduced motion, explicit Studio activation, game rules, server authority, uploads, PostgreSQL transactions, reward replay prevention, Mora settlement and historical webhook signatures.
+- Strict TypeScript passes; Worker and Next.js builds are required for this update.
+- Discord sign-in and persisted player records exist on the private host. Supabase uses four applied migrations and server-only access.
+- The owner-provided notification webhook is configured; development did not send a test message.
 
-## Still needs configuration or live end-to-end verification
+## Remaining limits
 
-- Owner-completed Discord authorization round trip and a real save/reload session.
-- Private Supabase storage if moving to the Vercel adapter. The current Sites host uses R2.
-- OpenAI image API account/key and generation quota.
-- Stripe test account, signing secret and package review before any live payments.
-- Notification delivery to the supplied Discord webhook; no test message was sent during development.
-- Device/browser interaction, real OAuth round trip, generated-image selection, payment return/webhook delivery, and mobile performance measurements.
-
-## Art and feature depth still below the full vision brief
-
-- The starter image has a local reaction runtime, not an independently rigged Rive/Live2D/Blender character with skeletal blending, IK and expressive facial deformation. Arbitrary AI images do not become fully rigged characters automatically.
-- Cat, dog and fusion choices affect identity/reaction sound, but share starter artwork until generated designs are chosen. Additional production-ready starter rigs and species hit-zone atlases are needed.
-- Vocalizations and music are procedural originals, not a full recorded animal-sound library or polished soundtrack. Location-specific score arrangements and event audio packs need additional art/audio work.
-- Ten regions have unique unlocks, lore, colors, enemy identities, loot and map positions. Detailed biome-specific exploration scenes, enemy artwork/rigs and chest assets are future asset work.
-- The admin interface supports players, grants, suspensions, economy, payments, Mora, logs, config and notification retries. Advanced analytics, refunds/dispute automation, database retention jobs, generation recovery tooling and large-scale operations are not complete.
-- Events are data configurable, but new monthly designs/lore/art require an operator. This repository does not promise autonomous monthly content creation.
-- Protected-zone handling is intentionally defensive. Production humanoid/fusion rigs need species-specific authored hitboxes and appropriate clothed designs.
-
-The project is a substantive full-stack implementation of the main loop with tested authority boundaries. These remaining items must be completed and verified before claiming the entire 85-section vision is production complete.
+- This is articulated 2D animation, not full 3D animation or complete Talking Tom feature parity. Faces use expression swaps rather than facial deformation or phoneme-driven lips.
+- Cat, dog and fusion identities currently share the animated sanctuary character. New custom pet/fusion designs use a generated twelve-part atlas and replace the animated starter on selection. Older portrait-only designs remain saved artwork. The supported body layout is a front-facing chibi companion; unusual anatomy may need another design attempt or authored rigging.
+- Real microphone playback, mobile layout/input, animation frame rates and generated-image selection need device/browser verification. Offline rendering and automated tests do not replace these checks.
+- Region gameplay, loot and combat are implemented; bespoke biome scenes, enemy rigs and a recorded species sound library remain art work.
+- Events are configured by an operator. Analytics, refunds for historical payments, retention jobs and generation recovery tooling are not complete.
+- Sites publication currently retains owner-only access. This update does not change the audience or claim the full original vision is ready for a public launch.

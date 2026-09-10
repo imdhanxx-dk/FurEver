@@ -726,7 +726,13 @@ export function applyIntent(
         'This creation has already been completed.',
       );
       candidate.status = intent.success ? 'ready' : 'failed';
-      if (intent.success) candidate.url = textValue(intent.url, 500);
+      if (intent.success) {
+        candidate.url = textValue(intent.url, 500);
+        candidate.format =
+          intent.format === 'companion-atlas-v1'
+            ? 'companion-atlas-v1'
+            : 'portrait';
+      }
       message = intent.success
         ? 'Your new design is ready.'
         : 'The painter could not finish this attempt.';
@@ -744,6 +750,7 @@ export function applyIntent(
       else {
         const p = pet();
         p.appearance = candidate.url;
+        p.appearanceFormat = candidate.format || 'portrait';
         if (g.kind === 'fusion') p.species = 'fusion';
       }
       message = 'Made by you. Forever yours.';

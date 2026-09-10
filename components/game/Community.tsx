@@ -1,65 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Coins, Mail, ArrowUpRight } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { SectionTitle, Choice, type ScreenProps } from './shared';
-export function BuyCoins({ config, request, payments, notify }: ScreenProps) {
-  const [busy, setBusy] = useState(false);
-  return (
-    <>
-      <SectionTitle
-        eyebrow="A LITTLE EXTRA FOR YOUR ADVENTURE"
-        title="Fill your coin pouch."
-        description="Pet Coins are also earned through play. Every level is reachable for free."
-      />
-      {!payments && (
-        <p className="notice">
-          Coin purchases are awaiting activation by the game owner.
-        </p>
-      )}
-      <div className="packages">
-        {config.packages.map((p) => (
-          <section className="panel" key={p.id}>
-            <Coins size={48} />
-            <h3>{p.name}</h3>
-            <h2>
-              {p.coins.toLocaleString()}
-              <small> PC</small>
-            </h2>
-            <button
-              className="primary"
-              disabled={busy || !payments || !p.enabled}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  const r = await request('payments/checkout', {
-                    packageId: p.id,
-                  });
-                  if (typeof r.url === 'string') window.location.assign(r.url);
-                } catch (e) {
-                  notify(String(e));
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              {p.enabled
-                ? new Intl.NumberFormat(undefined, {
-                    style: 'currency',
-                    currency: p.currency,
-                  }).format(p.amount / 100)
-                : 'Coming soon'}{' '}
-              <ArrowUpRight size={16} />
-            </button>
-          </section>
-        ))}
-      </div>
-      <p className="muted">
-        Pet Coins have no cash redemption value, cannot be withdrawn, and cannot
-        be transferred for real money. Wish tickets are earned through gameplay.
-      </p>
-    </>
-  );
-}
 export function Mora({ config, request, notify }: ScreenProps) {
   const [amount, setAmount] = useState('1'),
     [reference, setReference] = useState(''),

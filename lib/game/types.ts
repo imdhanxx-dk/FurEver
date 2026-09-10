@@ -36,6 +36,7 @@ export type Pet = {
   energy: number;
   bond: number;
   appearance: string;
+  appearanceFormat?: 'companion-atlas-v1' | 'portrait';
   equipped: string[];
 };
 export type Battle = {
@@ -74,6 +75,7 @@ export type Generation = {
     id: string;
     status: 'pending' | 'ready' | 'failed';
     url?: string;
+    format?: 'companion-atlas-v1' | 'portrait';
     prompt: string;
     created: number;
   }[];

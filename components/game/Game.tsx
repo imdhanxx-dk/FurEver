@@ -85,9 +85,6 @@ const Studio = lazy(() => import('./Studio')),
 const Mora = lazy(() =>
     import('./Community').then((m) => ({ default: m.Mora })),
   ),
-  BuyCoins = lazy(() =>
-    import('./Community').then((m) => ({ default: m.BuyCoins })),
-  ),
   Support = lazy(() =>
     import('./Community').then((m) => ({ default: m.Support })),
   );
@@ -119,7 +116,6 @@ const NAV = [
   ['create-pet', 'Creative studio', Palette],
   ['fusion-lab', 'Fusion Lab', Sparkles],
   ['profile', 'My story', UserRound],
-  ['buy-coins', 'Pet Coins', Coins],
   ['mora', 'Mora exchange', ArrowLeftRight],
   ['support', 'Contact the club', Mail],
 ] as const;
@@ -412,8 +408,6 @@ export default function Game() {
         );
         break;
       case 'buy-coins':
-        content = <BuyCoins {...screen} />;
-        break;
       case 'mora':
         content = <Mora {...screen} />;
         break;
@@ -552,7 +546,7 @@ export default function Game() {
                 <Progress value={xp.percent} aria-label="Level progress" />
               </div>
             </div>
-            <button className="coin-pill" onClick={() => navigate('buy-coins')}>
+            <button className="coin-pill" onClick={() => navigate('mora')}>
               <span>◈</span>
               {state.coins.toLocaleString()}
               <small>PC</small>

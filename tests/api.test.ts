@@ -1,7 +1,27 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readApiResponse } from '../lib/client/api';
-import { configured, databaseHeaders } from '../lib/server/env';
+import { configured, databaseHeaders, studioEnabled } from '../lib/server/env';
+
+test('paid image creation requires both a key and an explicit enabled flag', () => {
+  assert.equal(studioEnabled({}), false);
+  assert.equal(studioEnabled({ AI_PROVIDER_API_KEY: 'test-only' }), false);
+  assert.equal(studioEnabled({ AI_STUDIO_ENABLED: 'true' }), false);
+  assert.equal(
+    studioEnabled({
+      AI_PROVIDER_API_KEY: 'test-only',
+      AI_STUDIO_ENABLED: 'false',
+    }),
+    false,
+  );
+  assert.equal(
+    studioEnabled({
+      AI_PROVIDER_API_KEY: 'test-only',
+      AI_STUDIO_ENABLED: 'true',
+    }),
+    true,
+  );
+});
 
 test('an HTML access page gives a recovery action instead of a JSON syntax error', async () => {
   await assert.rejects(

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './game.css';
+import './furever-theme.css';
 export const metadata: Metadata = {
   title: 'FurEver · Companions & Adventures',
   description:

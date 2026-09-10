@@ -9,7 +9,7 @@
 - The HTTP API never exposes internal `generation_reserve`, `generation_finish`, `external_credit` or arbitrary admin-grant intents through the normal game endpoint.
 - Stripe verification uses raw-body HMAC-SHA256 and a five-minute timestamp window. The database verifies package amount/currency and credits each checkout only once.
 - Paid currency cannot purchase wish tickets. The public configuration validator enforces that separation and requires published gacha probabilities to total 100.
-- Private-zone interactions immediately recoil, reduce bond/happiness, and pause interaction. They grant no EXP, PC, items or achievements at any bond level. Vertical scroll gestures do not trigger a touch reaction.
+- Private-zone interactions immediately recoil, reduce bond/happiness, and pause interaction. They grant no EXP, PC, items or achievements at any bond level. Character gestures are captured on the canvas; room touches are ignored.
 - PNG upload limits are checked before parsing. No arbitrary image URLs or user-controlled provider endpoint is fetched. Raw uploads are not served back to browsers.
 - React escapes all player text. Discord mentions are disabled. API errors are sanitized; no stack trace or upstream secret is returned.
 

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Pet from './Pet';
 import { Choice, type ScreenProps, SectionTitle } from './shared';
 export default function Onboarding({
   act,
@@ -16,11 +17,9 @@ export default function Onboarding({
         description="Choose a companion. The friendship is yours to grow."
       />
       <div className="onboarding-grid">
-        <img
-          className="onboarding-pet"
-          src="/assets/companion.webp"
-          alt="Your new companion"
-        />
+        <div className="onboarding-pet">
+          <Pet pet={null} audio={null} compact />
+        </div>
         <form
           className="panel form-stack"
           onSubmit={(e) => {
@@ -51,8 +50,8 @@ export default function Onboarding({
             onChange={setPersonality}
           />
           <p className="muted">
-            Start with our sanctuary companion design, then make their
-            appearance your own in the creative studio.
+            All starters begin with our sanctuary companion. Create your own
+            animated character in the Creative Studio after you meet.
           </p>
           <button className="primary" disabled={busy || !name.trim()}>
             Meet {name || 'your companion'} ♡

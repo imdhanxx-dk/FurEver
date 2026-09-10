@@ -64,7 +64,6 @@ export default function Admin({ request, notify }: ScreenProps) {
           {[
             'players',
             'economy',
-            'payments',
             'mora',
             'security',
             'audit',
@@ -79,10 +78,10 @@ export default function Admin({ request, notify }: ScreenProps) {
       </Tabs>
       {section === 'configuration' ? (
         <section className="panel form-stack">
-          <h3>Events, economy, prices, packages & gacha</h3>
+          <h3>Events, Mora exchange, shop & gacha</h3>
           <p className="muted">
-            Changes are validated before saving. Package amounts use the
-            smallest currency unit. Keep unavailable packages disabled.
+            Changes are validated before saving. Players use Mora exchange and
+            earned Pet Coins; real-money checkout is disabled.
           </p>
           <textarea
             className="config-editor"

@@ -1,4 +1,7 @@
 'use client';
+import { useState } from 'react';
+import type { CareKind, PetCue } from '@/lib/client/companion-motion';
+import CompanionVoice from './CompanionVoice';
 import {
   Heart,
   Utensils,
@@ -17,12 +20,17 @@ import type { GameAudio } from '@/lib/client/audio';
 export default function Home(p: ScreenProps & { audio: GameAudio | null }) {
   const { state: s, act, busy, navigate, config } = p;
   const pet = s.pet!;
+  const [cue, setCue] = useState<PetCue>();
+  const care = async (kind: CareKind) => {
+    const result = await act({ action: 'care', kind });
+    if (result) setCue({ kind, id: Date.now() });
+  };
   return (
     <>
       <SectionTitle
-        eyebrow="A LITTLE MAGIC, EVERY DAY"
-        title={`Welcome home, ${pet.name}.`}
-        description="There’s a whole world out there. But right here is pretty wonderful, too."
+        eyebrow="YOUR LITTLE CORNER OF FUREVER"
+        title={`${pet.name}’s home`}
+        description="A full belly, a warm cuddle, and a little mischief."
       >
         <span className="pill">✦ Day {s.streak.count || 1} together</span>
       </SectionTitle>
@@ -30,11 +38,14 @@ export default function Home(p: ScreenProps & { audio: GameAudio | null }) {
         <section className="sanctuary">
           <div className="scene-heading">
             <span className="pill">⌂ Your sanctuary</span>
-            <span className="scene-weather">☾ A peaceful evening</span>
+            <span className="scene-weather">☾ Moonbeam cottage</span>
           </div>
           <Pet
             pet={pet}
             audio={p.audio}
+            cue={cue}
+            busy={busy}
+            onCare={(kind) => void care(kind)}
             onBond={() => void act({ action: 'care', kind: 'pet' })}
             onBoundary={() => void act({ action: 'boundary' })}
           />
@@ -42,7 +53,7 @@ export default function Home(p: ScreenProps & { audio: GameAudio | null }) {
             <span className="pill">
               {pet.personality} soul · Level {progress(s.xp).level}
             </span>
-            <span>Tap, stroke, or say hello.</span>
+            <span>Stroke my head · tap my paw · let’s play</span>
           </div>
           <div className="care-bar">
             {[
@@ -58,7 +69,17 @@ export default function Home(p: ScreenProps & { audio: GameAudio | null }) {
                 <button
                   key={String(kind)}
                   disabled={busy}
-                  onClick={() => void act({ action: 'care', kind })}
+                  draggable={
+                    !busy && ['feed', 'groom', 'play'].includes(String(kind))
+                  }
+                  onDragStart={(event) =>
+                    event.dataTransfer.setData(
+                      'application/x-furever-care',
+                      String(kind),
+                    )
+                  }
+                  onClick={() => void care(kind as CareKind)}
+                  aria-pressed={cue?.kind === kind}
                 >
                   <I />
                   <span>{String(label)}</span>
@@ -68,6 +89,7 @@ export default function Home(p: ScreenProps & { audio: GameAudio | null }) {
           </div>
         </section>
         <aside className="home-aside">
+          <CompanionVoice name={pet.name} onCue={setCue} />
           <section className="panel">
             <div className="panel-heading">
               <h3>Feeling good</h3>

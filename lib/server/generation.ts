@@ -1,7 +1,8 @@
 import { Database } from './database';
 import { readPlayer, transact } from './game-service';
 import { ensure, textValue } from '../game/engine';
-import { databaseHeaders, type Env } from './env';
+import { databaseHeaders, studioEnabled, type Env } from './env';
+import { companionDesignPrompt } from './companion-design';
 // Only PNG uploads. Walk every chunk before accepting bytes; no SVG, URLs, or arbitrary formats.
 export function validatePng(bytes: Uint8Array) {
   ensure(
@@ -53,11 +54,7 @@ export async function generate(
   admin: boolean,
 ) {
   const env = db.env;
-  ensure(
-    env.AI_PROVIDER_API_KEY,
-    'The creative studio is not available yet.',
-    503,
-  );
+  ensure(studioEnabled(env), 'The creative studio is not available yet.', 503);
   ensure(
     env.FILES || env.ASSET_BUCKET,
     'Image storage is not available yet.',
@@ -97,12 +94,16 @@ export async function generate(
     409,
   );
   try {
-    const style = `Create a polished cozy fantasy game ${g.kind === 'avatar' ? 'player portrait' : 'full-body companion, front three-quarter pose, all limbs visible, transparent background, centered with generous padding'}. Nonsexual, fully clothed if humanoid, family-friendly. No text or watermarks. ${prompt}`;
+    const animated = g.kind !== 'avatar';
+    const style = animated
+      ? companionDesignPrompt(prompt)
+      : `Create a polished cozy fantasy game player portrait. Nonsexual, fully clothed, family-friendly. No text or watermarks. ${prompt}`;
     const data = new FormData();
-    data.set('model', String(env.AI_IMAGE_MODEL || 'gpt-image-1'));
+    data.set('model', String(env.AI_IMAGE_MODEL || 'gpt-image-2.5-flare'));
     data.set('prompt', style);
-    data.set('size', '1024x1024');
+    data.set('size', animated ? '1536x1024' : '1024x1024');
     data.set('quality', 'medium');
+    data.set('output_format', 'png');
     data.set('background', g.kind === 'avatar' ? 'opaque' : 'transparent');
     if (input) data.set('image', input, 'portrait.png');
     const response = await fetch(
@@ -119,7 +120,13 @@ export async function generate(
     );
     ensure(
       response.ok,
-      'Your design could not be painted. Please try another prompt.',
+      response.status === 401 || response.status === 403
+        ? 'The image service needs the owner to check API access in OpenAI settings.'
+        : response.status === 429
+          ? 'The image service is at its limit. Try later; the owner may need to check API credits.'
+          : response.status === 400
+            ? 'The image service could not accept this design. Try a different prompt or reference PNG.'
+            : 'The image service is unavailable right now. Please try again later.',
       503,
     );
     const generated = (await response.json()) as {
@@ -167,6 +174,7 @@ export async function generate(
         candidateId,
         success: true,
         url: `/api/assets/${candidateId}`,
+        format: animated ? 'companion-atlas-v1' : 'portrait',
       },
       `generation-done:${candidateId}`,
       admin,

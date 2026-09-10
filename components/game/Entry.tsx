@@ -1,8 +1,7 @@
 'use client';
-import { useState } from 'react';
+import Pet from './Pet';
 import { PawPrint, Compass, Sparkles, Heart } from 'lucide-react';
 export default function Entry() {
-  const [greeting, setGreeting] = useState('A new friendship is waiting.');
   return (
     <main className="entry">
       <div className="entry-scene" />
@@ -39,17 +38,9 @@ export default function Entry() {
           </span>
         </div>
       </section>
-      <button
-        className="entry-pet"
-        onClick={() => setGreeting('Mrrp! I think we’re going to be friends.')}
-        aria-label="Greet your future companion"
-      >
-        <img
-          src="/assets/companion.webp"
-          alt="A fluffy cream companion with a teal crystal pendant"
-        />
-        <span className="speech">{greeting}</span>
-      </button>
+      <div className="entry-pet">
+        <Pet pet={null} audio={null} compact />
+      </div>
       <footer className="entry-footer">
         EVERY GREAT ADVENTURE BEGINS WITH A LITTLE TRUST.
       </footer>

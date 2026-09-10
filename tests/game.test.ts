@@ -258,6 +258,83 @@ test('avatar and fusion generation enforce five reservations server-side', () =>
     );
   }
 });
+test('selecting an animated custom companion persists its rig without resetting the pet', () => {
+  let s = run(starter(), { action: 'generation_open', kind: 'pet' }).state;
+  const id = s.generations[0].id;
+  s = run(s, {
+    action: 'generation_reserve',
+    sessionId: id,
+    candidateId: 'custom',
+    prompt: 'A blue fox',
+  }).state;
+  s = run(s, {
+    action: 'generation_finish',
+    sessionId: id,
+    candidateId: 'custom',
+    success: true,
+    url: '/api/assets/custom',
+    format: 'companion-atlas-v1',
+  }).state;
+  const before = structuredClone(s);
+  // Use the same clock to isolate selection from the normal offline needs decay.
+  const result = applyIntent(
+    s,
+    {
+      action: 'generation_select',
+      sessionId: id,
+      candidateId: 'custom',
+      url: 'https://untrusted.test/override',
+      format: 'portrait',
+    },
+    context(),
+  );
+  assert.equal(result.state.pet!.appearance, '/api/assets/custom');
+  assert.equal(result.state.pet!.appearanceFormat, 'companion-atlas-v1');
+  assert.deepEqual(
+    {
+      ...result.state.pet,
+      appearance: before.pet!.appearance,
+      appearanceFormat: before.pet!.appearanceFormat,
+    },
+    { ...before.pet, appearanceFormat: before.pet!.appearanceFormat },
+  );
+  assert.equal(result.state.coins, before.coins);
+  assert.equal(result.state.xp, before.xp);
+  assert.deepEqual(result.state.inventory, before.inventory);
+  assert.throws(
+    () =>
+      applyIntent(
+        result.state,
+        { action: 'generation_select', sessionId: id, candidateId: 'custom' },
+        context(),
+      ),
+    /available design/,
+  );
+});
+
+test('older portraits stay readable and are not treated as animation atlases', () => {
+  let s = run(starter(), { action: 'generation_open', kind: 'pet' }).state;
+  const session = s.generations[0];
+  session.candidates.push({
+    id: 'legacy',
+    status: 'ready',
+    url: '/api/assets/legacy',
+    prompt: 'Old portrait',
+    created: clock,
+  });
+  s = applyIntent(
+    s,
+    {
+      action: 'generation_select',
+      sessionId: session.id,
+      candidateId: 'legacy',
+    },
+    context(),
+  ).state;
+  assert.equal(s.pet!.appearanceFormat, 'portrait');
+  assert.equal(s.pet!.appearance, '/api/assets/legacy');
+});
+
 test('private-zone reactions award no PC, XP, inventory or achievement', () => {
   const s = starter();
   s.stats.battles = 1;

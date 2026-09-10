@@ -7,14 +7,15 @@
 ## What is implemented
 
 - Discord authorization-code login, one-time OAuth state, revocable server sessions, CSRF and immutable Discord-ID admin authorization.
-- Pet creation and personalities; local touch/swipe reactions, care, rest, training, bond, inventory and cosmetics.
+- Pet creation and personalities; articulated 2D companion with independent paws, head, feet and tail, facial expressions, touch/stroke reactions and blended care animations.
+- Local microphone record/replay with a playful voice, discarded after playback; no recording upload or AI call.
 - Level 1–100 progression, 620-EXP elixirs, integer-safe 1.2-level growth nectar, daily quests, login streaks and achievements.
 - Ten unlockable regions, timed expeditions, server-generated loot and turn-based PvE with defense, criticals, dodge, abilities and bond attacks.
 - Interactive grooming and catch minigames, sequenced server challenges, time checks and five rewarded completions per game per UTC day.
 - A ticket-only gacha with published odds, 10/50/100 pity guarantees, history and duplicate compensation.
 - Configurable monthly events, Pet Coin shop, festival rewards, Mora requests and an audited administration interface.
 - OpenAI Images integration with server-enforced attempt limits, PNG validation, private image storage and candidate selection.
-- Stripe Checkout integration with signature-verified, idempotent fulfillment. Packages default to **disabled**.
+- Mora exchange and earned Pet Coins. Real-money checkout is closed on the server and removed from player navigation.
 - Responsive interface, keyboard controls, reduced-motion support, procedural music/SFX, PWA shell and an offline page.
 - PostgreSQL migrations, transactional economy ledger, optimistic concurrency, rate limits, audit records and automated tests.
 
@@ -48,8 +49,8 @@ Apply the SQL migrations in order before enabling sign-in. See [setup](docs/SETU
 
 ## Release status
 
-This is an initial playable implementation, **not a certified public-production launch**. Live provider end-to-end tests need the owner's Discord OAuth app, Supabase project, AI account, and Stripe test configuration. The supplied Discord notification webhook is stored outside source control.
+This is a playable private release. Discord, Supabase and the Creative Studio key are configured on the hosted site. Live image generation/selection, microphone compatibility and mobile performance still need device verification. The supplied Discord notification webhook is stored outside source control.
 
-The current companion runtime animates image assets with local transforms, pointer tracking, distinct reactions, and procedural vocalizations. It does **not** yet include a commissioned Rive/Live2D/Blender rig, independently deforming facial features, or studio-recorded species sound packs. New species currently share the starter display asset until a generated appearance is selected. See the release-status document for the remaining art and operational work; these limitations are not presented as completed systems.
+The companion uses an authored 2D sprite atlas with independently animated joints, not a single moving portrait. Time-based clips blend between interactions and stay grounded at rest. This is not full 3D character animation or Talking Tom feature parity. New pet and fusion designs generate a compatible twelve-part atlas, preview as an animated character, and replace the default when selected. Older portrait-only designs remain saved artwork. See the release-status document for remaining art and operational work.
 
 Pet Coins cannot be withdrawn or redeemed for cash. Wish tickets cannot be bought with paid currency.

@@ -1,4 +1,4 @@
-import { environment, configured } from './env';
+import { environment, configured, studioEnabled } from './env';
 import { Database } from './database';
 import {
   errorResponse,
@@ -15,7 +15,7 @@ import { login, callback, logout, rotateSession } from './oauth';
 import { gameConfig, publicState, readPlayer, transact } from './game-service';
 import { GameError, ensure, textValue, intValue } from '../game/engine';
 import type { Intent } from '../game/types';
-import { checkout, webhook } from './payments';
+import { webhook } from './payments';
 import { generate, getAsset } from './generation';
 import { adminRead, adminAction } from './admin';
 import { deliverOutbox } from './discord';
@@ -91,8 +91,8 @@ export async function handle(request: Request) {
         csrf: s.csrf,
         config,
         capabilities: {
-          ai: !!env.AI_PROVIDER_API_KEY,
-          payments: !!env.STRIPE_SECRET_KEY,
+          ai: studioEnabled(env),
+          payments: false,
         },
       });
     }
@@ -154,8 +154,10 @@ export async function handle(request: Request) {
       return secureResponse({ ...result, state: publicState(result.state) });
     }
     if (path === 'payments/checkout') {
-      await rateLimit(db, `checkout:${uid}`, 5, 300);
-      return secureResponse(await checkout(db, uid, b.packageId, key));
+      throw new GameError(
+        'Real-money purchases are closed. Use the Mora exchange.',
+        410,
+      );
     }
     if (path === 'admin/action')
       return secureResponse(await adminAction(db, s, b, key));

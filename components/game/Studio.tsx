@@ -1,9 +1,10 @@
 'use client';
 import { readApiResponse } from '@/lib/client/api';
 import { useState } from 'react';
-import { Sparkles, Lock, Upload, Check } from 'lucide-react';
+import { Sparkles, Lock, Upload, Check, Palette } from 'lucide-react';
 import { progress } from '@/lib/game/progression';
 import { SectionTitle, Choice, type ScreenProps } from './shared';
+import Pet from './Pet';
 export default function Studio(
   p: ScreenProps & { csrf: string; refresh: () => Promise<void> },
 ) {
@@ -21,6 +22,7 @@ export default function Studio(
     [file, setFile] = useState<File | null>(null),
     [generating, setGenerating] = useState(false),
     [combination, setCombination] = useState('Animal + Animal');
+  const [previewReady, setPreviewReady] = useState<Record<string, boolean>>({});
   const locked =
     kind === 'fusion' && progress(p.state.xp).level < 10 && !p.admin;
   return (
@@ -40,6 +42,23 @@ export default function Studio(
         }
         description="Up to five creations. One favorite to call your own."
       />
+      <nav className="studio-kind-nav" aria-label="Creative Studio">
+        {(
+          [
+            ['avatar', 'create-avatar', 'My avatar'],
+            ['pet', 'create-pet', 'Companion design'],
+            ['fusion', 'fusion-lab', 'Fusion Lab'],
+          ] as const
+        ).map(([type, route, label]) => (
+          <button
+            key={type}
+            aria-current={kind === type ? 'page' : undefined}
+            onClick={() => p.navigate(route)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
       {locked ? (
         <section className="panel empty-state">
           <Lock size={44} />
@@ -52,15 +71,22 @@ export default function Studio(
       ) : (
         <div className="studio-grid">
           <section className="panel form-stack">
-            <Sparkles size={36} />
-            <h3>
-              {kind === 'avatar'
-                ? 'Become part of the story.'
-                : 'A spark of imagination.'}
-            </h3>
+            <div className="studio-intro">
+              <Palette />
+              <div>
+                <h3>
+                  {kind === 'avatar'
+                    ? 'Your storybook portrait'
+                    : 'The imagination workshop'}
+                </h3>
+                <small>
+                  {p.ai ? 'The paints are ready.' : 'The paints are resting.'}
+                </small>
+              </div>
+            </div>
             {!p.ai && (
               <p className="notice">
-                The creative studio is awaiting activation by the game owner.
+                Image creation is paused. Your saved designs are still here.
               </p>
             )}
             {!current || current.selected ? (
@@ -72,6 +98,12 @@ export default function Studio(
                       ? 'One fusion prism opens a session of five attempts.'
                       : 'Open your five-attempt creation session.'}
                 </p>
+                {kind !== 'avatar' && (
+                  <small>
+                    Create a companion, try its movements, then make it your
+                    pet. Your name, bond and progress stay with you.
+                  </small>
+                )}
                 {(!current || kind === 'fusion') && (
                   <button
                     className="primary"
@@ -125,6 +157,12 @@ export default function Studio(
                     placeholder="Tell us what makes this companion yours…"
                   />
                 </label>
+                {kind !== 'avatar' && (
+                  <small>
+                    Create a companion, try its movements, then make it your
+                    pet. Your name, bond and progress stay with you.
+                  </small>
+                )}
                 <small>
                   {current.attempts} / {p.admin ? '∞' : 5} attempts used ·
                   Failed requests count toward the limit.
@@ -191,7 +229,25 @@ export default function Studio(
                 g.candidates.map((candidate) => (
                   <div className="panel candidate" key={candidate.id}>
                     {candidate.status === 'ready' ? (
-                      <img src={candidate.url} alt="Your generated design" />
+                      candidate.format === 'companion-atlas-v1' ? (
+                        <div className="candidate-pet-preview">
+                          <Pet
+                            pet={null}
+                            audio={null}
+                            compact
+                            design={candidate}
+                            onReady={(ready) =>
+                              setPreviewReady((previous) =>
+                                previous[candidate.id] === ready
+                                  ? previous
+                                  : { ...previous, [candidate.id]: ready },
+                              )
+                            }
+                          />
+                        </div>
+                      ) : (
+                        <img src={candidate.url} alt="Your generated design" />
+                      )
                     ) : (
                       <div className="candidate-empty">
                         <Sparkles />
@@ -210,7 +266,12 @@ export default function Studio(
                         className={
                           g.selected === candidate.id ? 'secondary' : 'primary'
                         }
-                        disabled={p.busy || !!g.selected}
+                        disabled={
+                          p.busy ||
+                          !!g.selected ||
+                          (candidate.format === 'companion-atlas-v1' &&
+                            !previewReady[candidate.id])
+                        }
                         onClick={() =>
                           void p.act({
                             action: 'generation_select',
@@ -223,8 +284,12 @@ export default function Studio(
                           <>
                             <Check size={15} /> Chosen design
                           </>
+                        ) : g.kind === 'avatar' ? (
+                          'Choose this portrait'
+                        ) : candidate.format === 'companion-atlas-v1' ? (
+                          'Make this my pet'
                         ) : (
-                          'Choose this design'
+                          'Save this portrait'
                         )}
                       </button>
                     )}
