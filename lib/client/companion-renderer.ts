@@ -3,7 +3,10 @@ type Pose = ReturnType<typeof sampleCompanionPose>;
 type Rect = { x: number; y: number; w: number; h: number };
 export type CompanionAtlas = { image: HTMLCanvasElement; parts: Rect[] };
 
-export function prepareCompanionAtlas(image: HTMLImageElement): CompanionAtlas {
+export function prepareCompanionAtlas(
+  image: HTMLImageElement,
+  profile?: 'starlight',
+): CompanionAtlas {
   const canvas = document.createElement('canvas');
   canvas.width = image.naturalWidth;
   canvas.height = image.naturalHeight;
@@ -29,10 +32,16 @@ export function prepareCompanionAtlas(image: HTMLImageElement): CompanionAtlas {
   const queue = new Int32Array(width * height);
   const parts: Rect[] = [];
   for (let cell = 0; cell < 12; cell++) {
-    const x0 = Math.round((cell % 4) * cw),
-      y0 = Math.round(Math.floor(cell / 4) * ch);
-    const x1 = Math.round(((cell % 4) + 1) * cw),
-      y1 = Math.round((Math.floor(cell / 4) + 1) * ch);
+    // The Starlight reference has ear tips crossing into row two. Its authored
+    // trim windows separate those tips from the torso and paw components.
+    const middle = profile === 'starlight' && cell >= 4 && cell < 8;
+    const lowerHead = profile === 'starlight' && (cell === 8 || cell === 9);
+    const x0 = Math.round((cell % 4) * cw) + (middle ? 30 : 0),
+      y0 =
+        Math.round(Math.floor(cell / 4) * ch) +
+        (middle ? 22 : lowerHead ? -25 : 0);
+    const x1 = Math.round(((cell % 4) + 1) * cw) - (middle ? 20 : 0),
+      y1 = Math.round((Math.floor(cell / 4) + 1) * ch) - (middle ? 28 : 0);
     let first = 0,
       last = 0;
     const enqueue = (x: number, y: number) => {
@@ -47,7 +56,7 @@ export function prepareCompanionAtlas(image: HTMLImageElement): CompanionAtlas {
         data[p + 3] < 12 ||
         (!hasAlpha &&
           Math.max(r, g, b) - Math.min(r, g, b) < 12 &&
-          Math.min(r, g, b) > 160)
+          Math.min(r, g, b) > 110)
       ) {
         data[p + 3] = 0;
         queue[last++] = i;

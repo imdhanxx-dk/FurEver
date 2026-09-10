@@ -6,6 +6,7 @@ import {
   DAILY_TASKS,
 } from './catalog';
 import { levelBottleXp, progress, xpForLevel } from './progression';
+import { BUILTIN_COMPANIONS } from './companions';
 import type {
   Context,
   GameResult,
@@ -669,6 +670,25 @@ export function applyIntent(
       add(item);
       if (item === 'event_leaf') s.event.claimed.push(item);
       message = 'A little festival magic, just for you.';
+      break;
+    }
+    case 'companion_equip': {
+      const id = textValue(intent.designId);
+      const builtin = BUILTIN_COMPANIONS.find((design) => design.id === id);
+      const owned = s.generations
+        .filter((g) => g.kind !== 'avatar' && g.selected === id)
+        .flatMap((g) => g.candidates)
+        .find(
+          (candidate) =>
+            candidate.id === id &&
+            candidate.status === 'ready' &&
+            candidate.format === 'companion-atlas-v1',
+        );
+      ensure(builtin || owned?.url, 'Choose one of your available companions.');
+      const p = pet();
+      p.appearance = builtin?.url || owned!.url!;
+      p.appearanceFormat = 'companion-atlas-v1';
+      message = 'A new look, the same forever friend.';
       break;
     }
     case 'generation_open': {

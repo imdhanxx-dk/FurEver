@@ -11,7 +11,7 @@
 
 ## Validation
 
-- 45 automated tests cover motion timing, hit zones, reduced motion, explicit Studio activation, game rules, server authority, uploads, PostgreSQL transactions, reward replay prevention, Mora settlement and historical webhook signatures.
+- 46 automated tests cover motion timing, hit zones, reduced motion, explicit Studio activation, game rules, server authority, uploads, PostgreSQL transactions, reward replay prevention, Mora settlement and historical webhook signatures.
 - Strict TypeScript passes; Worker and Next.js builds are required for this update.
 - Discord sign-in and persisted player records exist on the private host. Supabase uses four applied migrations and server-only access.
 - The owner-provided notification webhook is configured; development did not send a test message.

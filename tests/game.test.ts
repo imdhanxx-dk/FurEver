@@ -312,6 +312,40 @@ test('selecting an animated custom companion persists its rig without resetting 
   );
 });
 
+test('companion switching preserves progress and only uses built-ins or selected owned creations', () => {
+  const before = starter();
+  let s = applyIntent(
+    before,
+    {
+      action: 'companion_equip',
+      designId: 'starlight',
+      url: 'https://untrusted.test/override',
+    },
+    context(),
+  ).state;
+  assert.equal(s.pet!.appearance, '/assets/starlight-rig.png');
+  assert.equal(s.pet!.name, before.pet!.name);
+  assert.equal(s.pet!.bond, before.pet!.bond);
+  assert.equal(s.coins, before.coins);
+  assert.equal(s.xp, before.xp);
+  assert.deepEqual(s.inventory, before.inventory);
+  assert.throws(
+    () =>
+      applyIntent(
+        s,
+        { action: 'companion_equip', designId: 'someone-elses-design' },
+        context(),
+      ),
+    /available companions/,
+  );
+  s = applyIntent(
+    s,
+    { action: 'companion_equip', designId: 'sunbeam' },
+    context(),
+  ).state;
+  assert.equal(s.pet!.appearance, '/assets/companion-rig.png');
+});
+
 test('older portraits stay readable and are not treated as animation atlases', () => {
   let s = run(starter(), { action: 'generation_open', kind: 'pet' }).state;
   const session = s.generations[0];

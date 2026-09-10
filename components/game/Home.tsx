@@ -15,12 +15,33 @@ import {
 import Pet from './Pet';
 import { Meter, SectionTitle, type ScreenProps } from './shared';
 import { DAILY_TASKS } from '@/lib/game/catalog';
+import { BUILTIN_COMPANIONS } from '@/lib/game/companions';
 import { progress } from '@/lib/game/progression';
 import type { GameAudio } from '@/lib/client/audio';
 export default function Home(p: ScreenProps & { audio: GameAudio | null }) {
   const { state: s, act, busy, navigate, config } = p;
   const pet = s.pet!;
   const [cue, setCue] = useState<PetCue>();
+  const companionLooks = [
+    ...BUILTIN_COMPANIONS,
+    ...s.generations
+      .filter((g) => g.kind !== 'avatar' && g.selected)
+      .flatMap((g) =>
+        g.candidates.filter(
+          (c) =>
+            c.id === g.selected &&
+            c.status === 'ready' &&
+            c.format === 'companion-atlas-v1',
+        ),
+      )
+      .map((c, i) => ({
+        id: c.id,
+        name: `My creation ${i + 1}`,
+        description: 'Dreamed up by you.',
+        icon: '♡',
+        url: c.url!,
+      })),
+  ];
   const care = async (kind: CareKind) => {
     const result = await act({ action: 'care', kind });
     if (result) setCue({ kind, id: Date.now() });
@@ -140,6 +161,40 @@ export default function Home(p: ScreenProps & { audio: GameAudio | null }) {
         </aside>
       </div>
       <div className="home-bottom">
+        <section className="panel companion-wardrobe">
+          <div className="panel-heading">
+            <div>
+              <h3>One friend. A little more magic.</h3>
+              <p>Choose a look. Your bond and progress stay with you.</p>
+            </div>
+            <Sparkles size={24} />
+          </div>
+          <div className="companion-choices">
+            {companionLooks.map((design) => (
+              <button
+                key={design.id}
+                disabled={busy}
+                aria-pressed={
+                  pet.appearance === design.url ||
+                  (design.id === 'sunbeam' &&
+                    pet.appearance === '/assets/companion.webp')
+                }
+                onClick={() =>
+                  void act({ action: 'companion_equip', designId: design.id })
+                }
+              >
+                <span aria-hidden="true">{design.icon}</span>
+                <strong>{design.name}</strong>
+                <small>{design.description}</small>
+              </button>
+            ))}
+            <button onClick={() => navigate('create-pet')}>
+              <span aria-hidden="true">＋</span>
+              <strong>Create my own</strong>
+              <small>Your imagination, brought to life.</small>
+            </button>
+          </div>
+        </section>
         <button
           className="destination-card"
           onClick={() => navigate('explore')}

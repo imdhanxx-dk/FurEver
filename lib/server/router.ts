@@ -26,6 +26,7 @@ const ACTIONS = new Set([
   'use_item',
   'buy',
   'equip',
+  'companion_equip',
   'claim_daily',
   'explore_start',
   'explore_step',

@@ -997,3 +997,58 @@ textarea {
   font-size: 0.7rem;
   padding: 7px;
 }
+/* Soft paper and dusk-purple keepsakes inspired by the FurEver reference. */
+.companion-wardrobe {
+  grid-column: 1/-1;
+  background: linear-gradient(130deg, #fcf7ef, #eee7ef);
+  border-color: #d9cbd4;
+}
+.companion-wardrobe .panel-heading {
+  color: #746276;
+}
+.companion-wardrobe .panel-heading p {
+  font-size: 0.875rem;
+  color: #91818a;
+  margin-top: 5px;
+}
+.companion-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 13px;
+}
+.companion-choices button {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  align-items: center;
+  text-align: left;
+  padding: 15px;
+  border: 2px solid #dfd2c5;
+  border-bottom-width: 4px;
+  background: #fffcf5;
+  color: #6a5c63;
+  border-radius: 17px;
+}
+.companion-choices button > span {
+  grid-row: 1/3;
+  font-size: 1.9rem;
+  color: #bc9761;
+}
+.companion-choices button strong {
+  font-size: 0.9375rem;
+}
+.companion-choices button small {
+  color: #8d7e7b;
+  font-size: 0.75rem;
+}
+.companion-choices button[aria-pressed='true'] {
+  border-color: #a795af;
+  background: #e7deec;
+}
+@media (max-width: 550px) {
+  .companion-choices {
+    grid-template-columns: 1fr;
+  }
+  .companion-wardrobe .panel-heading p {
+    max-width: 230px;
+  }
+}

@@ -194,7 +194,10 @@ export default function Pet({
     image.onload = () => {
       if (disposed) return;
       try {
-        atlas = prepareCompanionAtlas(image);
+        atlas = prepareCompanionAtlas(
+          image,
+          source === '/assets/starlight-rig.png' ? 'starlight' : undefined,
+        );
         setLoaded(true);
         onReadyRef.current?.(true);
         frame = requestAnimationFrame(paint);
