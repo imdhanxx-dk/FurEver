@@ -1,0 +1,33 @@
+{
+  "name": "ASSET_FUREVER",
+  "version": "1.0",
+  "source": "asset-furever-v1.webp",
+  "canvas": {
+    "width": 1536,
+    "height": 1024
+  },
+  "notes": [
+    "Master FurEver visual asset sheet.",
+    "Coordinates below define category regions in pixels as [x, y, width, height].",
+    "Keep the master sheet as the source of truth before extracting production sprites."
+  ],
+  "regions": {
+    "logo_branding": [0, 0, 320, 200],
+    "app_icons": [315, 0, 250, 200],
+    "currency_pet_coin": [565, 0, 490, 205],
+    "item_icons": [1050, 0, 486, 220],
+    "mochi_turnaround": [0, 200, 690, 240],
+    "mochi_expressions": [690, 200, 500, 255],
+    "rarity_frames_badges": [1190, 210, 346, 255],
+    "mochi_actions_keyframes": [0, 440, 1135, 145],
+    "interaction_elements": [1135, 460, 401, 125],
+    "ui_buttons": [0, 580, 1536, 65],
+    "navigation_icons": [0, 645, 920, 90],
+    "status_stat_icons": [920, 645, 616, 90],
+    "location_thumbnails": [0, 735, 1536, 140],
+    "loading_screen": [0, 875, 445, 149],
+    "promotional_banners": [445, 875, 545, 149],
+    "miscellaneous_assets": [990, 875, 410, 149],
+    "app_favicon": [1400, 875, 136, 149]
+  }
+}
