@@ -23,7 +23,7 @@ import {
 } from './FurEverIcons';
 
 export default function Home(
-  p: ScreenProps & { audio: GameAudio | null; playerName: string },
+  p: ScreenProps & { audio: GameAudio | null; playerName?: string },
 ) {
   const { state: s, act, busy, navigate } = p;
   const pet = s.pet!;
@@ -127,6 +127,7 @@ export default function Home(
           audio={p.audio}
           cue={cue}
           busy={busy}
+          compact
           onCare={(kind) => void care(kind)}
           onBond={() => void care('pet')}
           onBoundary={() => void act({ action: 'boundary' })}
