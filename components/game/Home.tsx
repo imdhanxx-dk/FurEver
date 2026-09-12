@@ -50,10 +50,10 @@ export default function Home(
   ] as const;
 
   const sideNav = [
-    { label: 'Inventory', Icon: InventoryIcon, route: 'inventory' },
-    { label: 'Team', Icon: TeamIcon, route: 'profile' },
+    { label: 'Inventory', Icon: InventoryIcon, route: 'inventory', badge: false },
+    { label: 'Team', Icon: TeamIcon, route: 'profile', badge: false },
     { label: 'Event', Icon: EventIcon, route: 'events', badge: true },
-    { label: 'World Map', Icon: WorldMapIcon, route: 'explore' },
+    { label: 'World Map', Icon: WorldMapIcon, route: 'explore', badge: false },
   ] as const;
 
   return (
