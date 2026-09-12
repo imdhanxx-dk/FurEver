@@ -5,6 +5,8 @@ import './furever-theme.css';
 import './furever-hub.css';
 import './furever-menus.css';
 import './furever-profile.css';
+import './asset-furever.css';
+
 export const metadata: Metadata = {
   title: 'FurEver · Companions & Adventures',
   description:
@@ -12,6 +14,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: { icon: '/icon.svg' },
 };
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
