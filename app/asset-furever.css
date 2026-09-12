@@ -13,6 +13,7 @@
   width: clamp(180px, 20vw, 285px);
   height: auto;
   object-fit: contain;
+  mix-blend-mode: screen;
   filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.2));
 }
 
@@ -97,6 +98,7 @@
 .fe-coin-art {
   display: inline-block;
   flex: none;
+  mix-blend-mode: screen;
   background-image: url('/assets/asset-furever/regions/currency-pet-coin.webp');
   background-repeat: no-repeat;
   background-size: 400% 100%;
@@ -120,6 +122,7 @@
   width: clamp(180px, 18vw, 285px);
   max-height: 100px;
   object-fit: contain;
+  mix-blend-mode: screen;
   filter: drop-shadow(0 4px 16px rgba(255, 247, 224, 0.75));
 }
 
@@ -150,6 +153,7 @@
   margin-right: 6px;
   vertical-align: -6px;
   border-radius: 50%;
+  mix-blend-mode: screen;
   background-image: url('/assets/asset-furever/regions/currency-pet-coin.webp');
   background-size: 400% 100%;
   background-position: 0 50%;
@@ -180,6 +184,7 @@
   background-size: 672px 448px;
   background-position-y: -327px;
   box-shadow: 0 5px 12px rgba(36, 29, 39, 0.14);
+  transition: transform 0.18s ease, filter 0.18s ease;
 }
 
 .locations-list button:nth-child(1)::before { background-position-x: -6px; }
@@ -200,6 +205,7 @@
 
 /* Use the supplied loading illustration as a soft stage behind the existing live loader. */
 .game-loading {
+  position: relative;
   isolation: isolate;
 }
 
