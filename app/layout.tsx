@@ -4,6 +4,7 @@ import './game.css';
 import './furever-theme.css';
 import './furever-hub.css';
 import './furever-menus.css';
+import './furever-profile.css';
 export const metadata: Metadata = {
   title: 'FurEver · Companions & Adventures',
   description:
