@@ -12,7 +12,6 @@ import {
   FeedIcon,
   InventoryIcon,
   LocationIcon,
-  PawCoinIcon,
   PetIcon,
   PlayIcon,
   PlusIcon,
@@ -79,13 +78,17 @@ export default function Home(
 
       <button className="fe-region-hud" onClick={() => navigate('explore')}>
         <small>CURRENT REGION</small>
-        <span><LocationIcon /> WHISPERING MEADOW</span>
+        <span>
+          <LocationIcon /> WHISPERING MEADOW
+        </span>
       </button>
 
       <button className="fe-coin-hud" onClick={() => navigate('mora')}>
-        <PawCoinIcon />
+        <span className="fe-coin-art" aria-hidden="true" />
         <strong>{s.coins.toLocaleString()} PC</strong>
-        <span className="fe-plus-orb"><PlusIcon /></span>
+        <span className="fe-plus-orb">
+          <PlusIcon />
+        </span>
       </button>
 
       <section className="fe-quest-card">
@@ -108,17 +111,29 @@ export default function Home(
             </button>
           ))}
         </div>
-        <p>Small steps,<br />brighter tomorrows.</p>
+        <p>
+          Small steps,
+          <br />
+          brighter tomorrows.
+        </p>
       </section>
 
       <section className="fe-world-title" aria-label="Whispering Meadow">
-        <div className="fe-logo-lockup">
-          <span className="fe-logo-paw">✦</span>
-          <strong>FurEver</strong>
-          <small>A KINDER WORLD FOR EVERY CAT ♡</small>
+        <div className="fe-logo-lockup fe-logo-lockup-asset">
+          <img
+            className="fe-logo-image"
+            src="/assets/asset-furever/regions/logo-branding.webp"
+            alt="FurEver · A kinder world for every cat"
+          />
         </div>
-        <h1>Whispering<br />Meadow</h1>
-        <p>NEW PLACES <span>•</span> NEW FRIENDS <span>•</span> A BRIGHTER TOMORROW</p>
+        <h1>
+          Whispering
+          <br />
+          Meadow
+        </h1>
+        <p>
+          NEW PLACES <span>•</span> NEW FRIENDS <span>•</span> A BRIGHTER TOMORROW
+        </p>
       </section>
 
       <div className="fe-pet-stage">
@@ -160,7 +175,9 @@ export default function Home(
             className={cue?.kind === key || key === 'pet' ? 'active' : ''}
             onClick={onClick}
           >
-            <span className="fe-action-orb"><Icon /></span>
+            <span className="fe-action-orb">
+              <Icon />
+            </span>
             <strong>{label}</strong>
           </button>
         ))}
@@ -171,7 +188,11 @@ export default function Home(
         <span>A KINDER WORLD, ONE CAT AT A TIME.</span>
       </div>
       <div className="fe-world-mantra" aria-hidden="true">
-        More<br />Good Days<br />Together ♡
+        More
+        <br />
+        Good Days
+        <br />
+        Together ♡
       </div>
     </div>
   );
