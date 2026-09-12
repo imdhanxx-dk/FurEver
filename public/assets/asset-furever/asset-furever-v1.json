@@ -1,15 +1,19 @@
 {
   "name": "ASSET_FUREVER",
   "version": "1.0",
-  "source": "asset-furever-v1.webp",
-  "canvas": {
+  "source_canvas": {
     "width": 1536,
     "height": 1024
   },
+  "preview": {
+    "file": "asset-furever-v1.webp",
+    "width": 480,
+    "height": 320
+  },
   "notes": [
-    "Master FurEver visual asset sheet.",
-    "Coordinates below define category regions in pixels as [x, y, width, height].",
-    "Keep the master sheet as the source of truth before extracting production sprites."
+    "Region coordinates refer to the original 1536x1024 FurEver asset sheet.",
+    "The repository WebP is a lightweight preview, not the production sprite source.",
+    "Extract individual production assets from the original source sheet before wiring them into runtime UI."
   ],
   "regions": {
     "logo_branding": [0, 0, 320, 200],
