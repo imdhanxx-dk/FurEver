@@ -1,0 +1,257 @@
+/* ASSET_FUREVER visual integration.
+   Keeps the game interactive while reusing the approved FurEver art language. */
+
+.asset-brand {
+  display: inline-flex !important;
+  align-items: center;
+  min-width: 220px;
+  text-decoration: none;
+}
+
+.asset-brand img {
+  display: block;
+  width: clamp(180px, 20vw, 285px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.2));
+}
+
+.entry-asset-edition .entry-header {
+  align-items: flex-start;
+}
+
+.entry-asset-edition .entry-content {
+  max-width: 720px;
+}
+
+.entry-discord-cta {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 14px 35px rgba(17, 34, 31, 0.2),
+    inset 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.entry-discord-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 28%, rgba(255, 255, 255, 0.22), transparent 66%);
+  transform: translateX(-115%);
+  animation: asset-cta-glint 4.8s ease-in-out infinite;
+}
+
+@keyframes asset-cta-glint {
+  0%, 68% { transform: translateX(-115%); }
+  82%, 100% { transform: translateX(115%); }
+}
+
+.entry-asset-ribbon {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: min(100%, 560px);
+  margin-top: 24px;
+}
+
+.entry-asset-chip {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 246, 222, 0.3);
+  border-radius: 18px;
+  background: linear-gradient(130deg, rgba(24, 42, 39, 0.72), rgba(34, 32, 39, 0.55));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.entry-asset-chip > img {
+  width: 76px;
+  height: 54px;
+  object-fit: contain;
+  flex: none;
+  border-radius: 12px;
+}
+
+.entry-asset-chip > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #fff8ea;
+  font-size: 0.76rem;
+  line-height: 1.2;
+}
+
+.entry-asset-chip small {
+  color: #f2cb7f;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.entry-coin-art,
+.fe-coin-art {
+  display: inline-block;
+  flex: none;
+  background-image: url('/assets/asset-furever/regions/currency-pet-coin.webp');
+  background-repeat: no-repeat;
+  background-size: 400% 100%;
+  background-position: 0 50%;
+}
+
+.entry-coin-art {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  filter: drop-shadow(0 5px 10px rgba(241, 181, 71, 0.24));
+}
+
+.fe-logo-lockup-asset {
+  margin: 0 auto 10px;
+  min-height: 72px;
+}
+
+.fe-logo-image {
+  display: block;
+  width: clamp(180px, 18vw, 285px);
+  max-height: 100px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(255, 247, 224, 0.75));
+}
+
+.fe-coin-art {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 8px rgba(255, 197, 88, 0.42));
+}
+
+.fe-coin-hud:hover .fe-coin-art {
+  animation: asset-coin-wiggle 0.7s ease;
+}
+
+@keyframes asset-coin-wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  35% { transform: rotate(-7deg) scale(1.08); }
+  70% { transform: rotate(7deg) scale(1.04); }
+}
+
+/* Carry the Pet Coin identity into secondary menus without changing game logic. */
+.coin-pill::before,
+.coin::before {
+  content: '';
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  vertical-align: -6px;
+  border-radius: 50%;
+  background-image: url('/assets/asset-furever/regions/currency-pet-coin.webp');
+  background-size: 400% 100%;
+  background-position: 0 50%;
+  background-repeat: no-repeat;
+}
+
+/* Turn the ten-world list into a visual travel journal using the approved world art.
+   The source preview is 480×320; the thumbnail row sits at the lower edge of that sheet. */
+.locations-list button {
+  display: grid !important;
+  grid-template-columns: 60px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+}
+
+.locations-list .location-index {
+  display: none;
+}
+
+.locations-list button::before {
+  content: '';
+  width: 58px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background-image: url('/assets/asset-furever/asset-furever-v1.webp');
+  background-repeat: no-repeat;
+  background-size: 672px 448px;
+  background-position-y: -327px;
+  box-shadow: 0 5px 12px rgba(36, 29, 39, 0.14);
+}
+
+.locations-list button:nth-child(1)::before { background-position-x: -6px; }
+.locations-list button:nth-child(2)::before { background-position-x: -67px; }
+.locations-list button:nth-child(3)::before { background-position-x: -129px; }
+.locations-list button:nth-child(4)::before { background-position-x: -190px; }
+.locations-list button:nth-child(5)::before { background-position-x: -251px; }
+.locations-list button:nth-child(6)::before { background-position-x: -312px; }
+.locations-list button:nth-child(7)::before { background-position-x: -374px; }
+.locations-list button:nth-child(8)::before { background-position-x: -435px; }
+.locations-list button:nth-child(9)::before { background-position-x: -557px; }
+.locations-list button:nth-child(10)::before { background-position-x: -614px; }
+
+.locations-list button:hover::before {
+  transform: translateY(-1px) scale(1.04);
+  filter: saturate(1.08) brightness(1.04);
+}
+
+/* Use the supplied loading illustration as a soft stage behind the existing live loader. */
+.game-loading {
+  isolation: isolate;
+}
+
+.game-loading::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: min(76vw, 430px);
+  aspect-ratio: 3.45 / 1;
+  border-radius: 18px;
+  opacity: 0.3;
+  background-image: url('/assets/asset-furever/asset-furever-v1.webp');
+  background-size: 480px 320px;
+  background-position: -4px -277px;
+  background-repeat: no-repeat;
+  filter: blur(0.2px) saturate(1.05);
+  box-shadow: 0 18px 55px rgba(25, 24, 38, 0.12);
+}
+
+@media (max-width: 820px) {
+  .asset-brand img {
+    width: 175px;
+  }
+
+  .entry-asset-ribbon {
+    grid-template-columns: 1fr;
+    width: min(100%, 360px);
+  }
+
+  .entry-asset-chip:nth-child(2) {
+    display: none;
+  }
+
+  .fe-logo-image {
+    width: 170px;
+  }
+
+  .locations-list button {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+  }
+
+  .locations-list button::before {
+    width: 50px;
+    height: 34px;
+    background-size: 580px 387px;
+    background-position-y: -282px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-discord-cta::after,
+  .fe-coin-hud:hover .fe-coin-art {
+    animation: none;
+  }
+}
