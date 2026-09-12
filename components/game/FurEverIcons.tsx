@@ -1,8 +1,8 @@
-import type { SVGProps } from 'react';
+import type { ReactNode, SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement> & { title?: string };
 
-function BaseIcon({ title, children, ...props }: IconProps & { children: React.ReactNode }) {
+function BaseIcon({ title, children, ...props }: IconProps & { children: ReactNode }) {
   return (
     <svg viewBox="0 0 64 64" fill="none" aria-hidden={title ? undefined : true} role={title ? 'img' : undefined} {...props}>
       {title ? <title>{title}</title> : null}
