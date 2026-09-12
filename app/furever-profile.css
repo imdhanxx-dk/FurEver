@@ -1,0 +1,168 @@
+/* FurEver My Story / character archive */
+
+.furever-app:has(.profile-card) .game-inset {
+  background:
+    radial-gradient(circle at 20% 8%, rgba(235,177,93,.11), transparent 28%),
+    linear-gradient(rgba(17,24,22,.92), rgba(20,25,23,.96)),
+    url('/assets/sanctuary-room.png') center / cover fixed !important;
+}
+
+.furever-app:has(.profile-card) .topbar {
+  background: rgba(29,29,28,.78);
+  border-bottom-color: rgba(245,218,178,.18);
+  backdrop-filter: blur(18px);
+}
+
+.profile-card.panel {
+  position: relative;
+  min-height: 240px;
+  display: grid;
+  grid-template-columns: 180px minmax(0,1fr);
+  align-items: center;
+  gap: 28px;
+  overflow: hidden;
+  padding: 28px;
+  border: 1px solid rgba(255,234,204,.22);
+  border-radius: 30px;
+  color: #fff7e8;
+  background:
+    radial-gradient(circle at 18% 50%, rgba(241,189,104,.12), transparent 25%),
+    linear-gradient(120deg, rgba(48,43,41,.88), rgba(31,36,33,.82));
+  box-shadow: 0 28px 70px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.08);
+}
+
+.profile-card.panel::after {
+  content: 'MY STORY';
+  position: absolute;
+  right: 24px;
+  bottom: -8px;
+  color: rgba(255,238,210,.055);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(4rem, 9vw, 8rem);
+  font-weight: 900;
+  letter-spacing: -.06em;
+  pointer-events: none;
+}
+
+.profile-card.panel > img {
+  width: 164px;
+  height: 164px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid rgba(255,239,214,.72);
+  outline: 7px solid rgba(236,184,96,.12);
+  box-shadow: 0 0 40px rgba(235,177,81,.15), inset 0 0 20px rgba(255,255,255,.10);
+}
+
+.profile-card.panel h2 {
+  margin: 0 0 8px;
+  color: #fff8e9;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  letter-spacing: -.045em;
+}
+
+.profile-card.panel p {
+  margin: 0 0 20px;
+  color: rgba(255,247,232,.62);
+  font-size: .92rem;
+  letter-spacing: .04em;
+}
+
+.profile-card.panel .text-button {
+  position: relative;
+  z-index: 2;
+  width: fit-content;
+  padding: 10px 15px;
+  border: 1px solid rgba(241,189,104,.38);
+  border-radius: 999px;
+  color: #ffe1a1;
+  background: rgba(106,76,40,.16);
+}
+
+.furever-app:has(.profile-card) .section-title {
+  margin-top: 22px;
+  padding: 22px 26px;
+  border: 1px solid rgba(255,236,211,.18);
+  border-radius: 26px;
+  background: rgba(38,35,34,.70);
+  backdrop-filter: blur(14px);
+}
+
+.furever-app:has(.profile-card) .section-title .eyebrow { color: #efbd68; }
+.furever-app:has(.profile-card) .section-title h2 {
+  color: #fff7e8;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 3vw, 3.1rem);
+}
+.furever-app:has(.profile-card) .section-title p { color: rgba(255,247,232,.58); }
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.achievement.panel {
+  position: relative;
+  min-height: 160px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255,235,206,.13);
+  border-radius: 22px;
+  color: rgba(255,247,232,.55);
+  background: linear-gradient(145deg, rgba(44,40,39,.72), rgba(31,33,32,.76));
+  box-shadow: 0 16px 34px rgba(0,0,0,.14), inset 0 1px rgba(255,255,255,.04);
+}
+
+.achievement.panel::before {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border: 1px solid rgba(255,245,228,.055);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.achievement.panel svg {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 20px;
+  color: rgba(255,240,218,.30);
+}
+
+.achievement.panel h3 {
+  position: relative;
+  margin: 0 0 7px;
+  color: rgba(255,247,232,.68);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.achievement.panel small { position: relative; color: rgba(255,247,232,.38); }
+
+.achievement.panel.unlocked {
+  border-color: rgba(240,190,104,.38);
+  color: #fff6e4;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(241,189,104,.14), transparent 32%),
+    linear-gradient(145deg, rgba(60,49,41,.82), rgba(35,38,35,.82));
+  box-shadow: 0 18px 38px rgba(0,0,0,.18), inset 0 0 36px rgba(238,179,84,.06);
+}
+.achievement.panel.unlocked svg {
+  color: #ffc96e;
+  filter: drop-shadow(0 0 12px rgba(243,191,102,.33));
+}
+.achievement.panel.unlocked h3 { color: #fff7e8; }
+.achievement.panel.unlocked small { color: rgba(255,240,211,.62); }
+
+@media (max-width: 720px) {
+  .profile-card.panel {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+    padding: 22px 18px;
+  }
+  .profile-card.panel > img { width: 132px; height: 132px; }
+  .profile-card.panel .text-button { margin-inline: auto; }
+  .achievement-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .achievement.panel { min-height: 145px; padding: 14px; }
+}
