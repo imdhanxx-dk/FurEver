@@ -4,7 +4,7 @@ import gc, subprocess, time
 WIDTH, HEIGHT, FPS = 704, 384, 24
 FULL_FRAMES, PREVIEW_FRAMES = 121, 49
 MODEL_ID = "Lightricks/LTX-Video"
-DISTILLED_CKPT = "https://huggingface.co/Lightricks/LTX-Video/resolve/main/ltxv-2b-0.9.6-distilled-04-25.safetensors"
+DISTILLED_FILENAME = "ltxv-2b-0.9.6-distilled-04-25.safetensors"
 
 STYLE = (
     "premium fantasy game cinematic, painterly 2.5D animation with convincing depth, "
@@ -75,14 +75,58 @@ def prepare_refs(refs):
 
 def load_pipeline():
     import torch
+    from huggingface_hub import hf_hub_download
     from diffusers import AutoencoderKLLTXVideo, LTXImageToVideoPipeline, LTXVideoTransformer3DModel
     from transformers import T5EncoderModel, BitsAndBytesConfig
-    if not torch.cuda.is_available(): raise RuntimeError("Attach a Colab GPU first.")
+
+    if not torch.cuda.is_available():
+        raise RuntimeError("Attach a Colab GPU first.")
+
+    print("Loading 8-bit T5 text encoder...")
     q = BitsAndBytesConfig(load_in_8bit=True)
-    text_encoder = T5EncoderModel.from_pretrained(MODEL_ID,subfolder="text_encoder",quantization_config=q,torch_dtype=torch.float16,device_map="auto")
-    transformer = LTXVideoTransformer3DModel.from_single_file(DISTILLED_CKPT,torch_dtype=torch.float16,low_cpu_mem_usage=True)
-    vae = AutoencoderKLLTXVideo.from_single_file(DISTILLED_CKPT,torch_dtype=torch.float16,low_cpu_mem_usage=True)
-    pipe = LTXImageToVideoPipeline.from_pretrained(MODEL_ID,text_encoder=text_encoder,transformer=transformer,vae=vae,torch_dtype=torch.float16,device_map="balanced")
+    text_encoder = T5EncoderModel.from_pretrained(
+        MODEL_ID,
+        subfolder="text_encoder",
+        quantization_config=q,
+        torch_dtype=torch.float16,
+        device_map="auto",
+    )
+
+    # Download through huggingface_hub and pass a LOCAL file path to Diffusers.
+    # Passing a /resolve/main/... URL to from_single_file() makes Diffusers prepend
+    # another /resolve/main/ and produces the 404 seen in Colab.
+    print("Locating/downloading LTX 2B distilled checkpoint...")
+    distilled_ckpt = hf_hub_download(
+        repo_id=MODEL_ID,
+        filename=DISTILLED_FILENAME,
+        repo_type="model",
+        resume_download=True,
+    )
+    print("Checkpoint ready:", distilled_ckpt)
+
+    print("Loading LTX 2B distilled transformer...")
+    transformer = LTXVideoTransformer3DModel.from_single_file(
+        distilled_ckpt,
+        torch_dtype=torch.float16,
+        low_cpu_mem_usage=True,
+    )
+
+    print("Loading LTX video VAE...")
+    vae = AutoencoderKLLTXVideo.from_single_file(
+        distilled_ckpt,
+        torch_dtype=torch.float16,
+        low_cpu_mem_usage=True,
+    )
+
+    print("Building image-to-video pipeline...")
+    pipe = LTXImageToVideoPipeline.from_pretrained(
+        MODEL_ID,
+        text_encoder=text_encoder,
+        transformer=transformer,
+        vae=vae,
+        torch_dtype=torch.float16,
+        device_map="balanced",
+    )
     if hasattr(pipe.vae,"enable_tiling"): pipe.vae.enable_tiling()
     if hasattr(pipe.vae,"enable_slicing"): pipe.vae.enable_slicing()
     pipe.set_progress_bar_config(disable=False)
