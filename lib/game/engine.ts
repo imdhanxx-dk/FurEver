@@ -6,7 +6,15 @@ import {
   DAILY_TASKS,
 } from './catalog';
 import { levelBottleXp, progress, xpForLevel } from './progression';
+import { dropKitten } from './kitten-drop';
 import { BUILTIN_COMPANIONS } from './companions';
+import {
+  newWorld,
+  WORLD_OBJECTS,
+  segmentWalkable,
+  WORLD_SPEED,
+  accessoryBonus,
+} from './world';
 import type {
   Context,
   GameResult,
@@ -53,7 +61,9 @@ const clamp = (n: number) => Math.max(0, Math.min(100, Math.floor(n)));
 export function initialState(now: number): PlayerState {
   return {
     version: 1,
-    coins: 500,
+    coins: 1000,
+    welcomeGift: true,
+    loginGifts: { day: '', days: 0 },
     xp: 0,
     pet: null,
     avatar: null,
@@ -65,7 +75,8 @@ export function initialState(now: number): PlayerState {
       brush: 2,
       toy: 1,
       ticket: 3,
-      fusion_token: 1,
+      ribbon: 1,
+      moon_collar: 1,
     },
     daily: { day: day(now), tasks: [], claimed: false, grooming: 0, play: 0 },
     streak: { day: '', count: 0 },
@@ -115,12 +126,15 @@ export function applyIntent(
     ensure(s.inventory[id] <= 1_000_000, 'Inventory limit reached.');
   };
   const take = (id: string, n = 1) => {
-    ensure(admin || (s.inventory[id] ?? 0) >= n, 'You need more of that item.');
-    if (!admin) s.inventory[id] -= n;
+    ensure((s.inventory[id] ?? 0) >= n, 'You need more of that item.');
+    s.inventory[id] -= n;
   };
   const pay = (n: number) => {
-    ensure(admin || s.coins >= n, 'You need a few more Pet Coins.');
-    if (!admin) grant('PC', -n, 'SHOP_PURCHASE');
+    ensure(
+      Number.isSafeInteger(n) && n > 0 && s.coins >= n,
+      'You need a few more Pet Coins.',
+    );
+    grant('PC', -n, 'SHOP_PURCHASE');
   };
   const task = (id: string) => {
     if (!s.daily.tasks.includes(id)) s.daily.tasks.push(id);
@@ -159,7 +173,217 @@ export function applyIntent(
   }
   s.lastSeen = now;
   switch (intent.action) {
+    case 'rename_pet': {
+      const p = pet();
+      p.name = textValue(intent.name, 24);
+      s.petNames ??= {};
+      s.petNames[p.appearance] = p.name;
+      message = `Your companion is now called ${p.name}.`;
+      break;
+    }
+    case 'world_sync':
+    case 'world_interact': {
+      const p = pet(),
+        w = (s.world ??= newWorld(now));
+      const path = intent.path;
+      ensure(
+        Array.isArray(path) && path.length <= 300,
+        'The trail could not be saved. Re-enter the meadow.',
+      );
+      let position = w.position,
+        distance = 0;
+      for (const point of path) {
+        ensure(
+          Array.isArray(point) &&
+            point.length === 2 &&
+            point.every((v) => typeof v === 'number' && Number.isFinite(v)),
+          'Invalid trail.',
+        );
+        const next: [number, number] = [point[0], point[1]];
+        const step = Math.hypot(next[0] - position[0], next[1] - position[1]);
+        ensure(
+          step <= 2 && segmentWalkable(position, next, w.stage),
+          'That path crosses an obstacle. Re-enter the meadow.',
+        );
+        distance += step;
+        position = next;
+      }
+      const elapsed = Math.max(0, Math.min(30, (now - w.updated) / 1000));
+      ensure(
+        distance <= elapsed * WORLD_SPEED * 1.1 + 1.5,
+        'Your companion moved too far between saves. Re-enter the meadow.',
+      );
+      w.position = position;
+      w.updated = now;
+      const record = (id: string, title: string) => {
+        if (!w.history.some((h) => h.id === id))
+          w.history.unshift({ id, title, time: now });
+        w.history = w.history.slice(0, 80);
+      };
+      const finish = (
+        id: string,
+        title: string,
+        stage: number,
+        coins: number,
+        xp: number,
+      ) => {
+        ensure(!w.quests.includes(id), 'This chapter reward is already saved.');
+        w.quests.push(id);
+        w.stage = stage;
+        record(id, title);
+        grant(
+          'PC',
+          Math.round(coins * accessoryBonus(s).reward),
+          'STORY_REWARD',
+        );
+        grant('XP', xp, 'STORY_REWARD');
+        p.bond = clamp(p.bond + 3 + accessoryBonus(s).friendship);
+        message = title;
+      };
+      if (position[0] < -16 && !w.discovered.includes('grove')) {
+        w.discovered.push('grove');
+        record('grove', 'Discovered the memory grove');
+      }
+      if (
+        position[1] < -33 &&
+        w.stage >= 6 &&
+        !w.discovered.includes('orchard')
+      ) {
+        w.discovered.push('orchard');
+        record('orchard', 'Discovered the listening orchard');
+      }
+      if (intent.action === 'world_sync') {
+        message = 'Trail saved.';
+        break;
+      }
+      const object = WORLD_OBJECTS.find((o) => o.id === intent.objectId);
+      ensure(
+        object && w.stage >= object.stage,
+        'This part of the story is still quiet.',
+      );
+      ensure(
+        Math.hypot(position[0] - object.x, position[1] - object.z) <= 3.4,
+        'Move closer to interact.',
+      );
+      const id = object.id;
+      if (
+        object.kind === 'seed' ||
+        object.kind === 'shard' ||
+        object.kind === 'secret'
+      ) {
+        ensure(
+          !w.collected.includes(id),
+          'You already collected this treasure.',
+        );
+        w.collected.push(id);
+        grant('PC', object.kind === 'secret' ? 150 : 20, 'WORLD_TREASURE');
+        grant('XP', object.kind === 'secret' ? 100 : 30, 'WORLD_TREASURE');
+        if (object.kind === 'secret') {
+          w.secrets.push(id);
+          add('moon_collar');
+          record(id, 'Found the rootkeeper’s hidden cache');
+        }
+        message = `Collected ${object.name.toLowerCase()}.`;
+      } else if (id === 'edda') {
+        if (w.stage === 0) {
+          w.stage = 1;
+          record('meet_edda', 'Met Edda, the lantern keeper');
+        }
+        message =
+          w.stage >= 2
+            ? 'Edda: The beacon is singing again. The seed library may know why.'
+            : 'Edda: Three humming seeds will wake the beacon. Look for their golden light around the village.';
+      } else if (id === 'beacon') {
+        ensure(w.stage === 1, 'The beacon is already glowing.');
+        ensure(
+          ['seed-a', 'seed-b', 'seed-c'].every((id) =>
+            w.collected.includes(id),
+          ),
+          'Find all three humming seeds first.',
+        );
+        finish('beacon', 'Restored the meadow beacon', 2, 100, 180);
+        add('ticket');
+      } else if (id === 'vale') {
+        record('meet_vale', 'Met Vale at the seed library');
+        message =
+          'Vale: Memory glass rests in the western grove. Bring three fragments to the observatory. The meadow remembers a promise.';
+      } else if (id === 'observatory') {
+        ensure(w.stage === 3, 'The lens has already shared its memory.');
+        finish('lens', 'Learned the promise of the wild', 4, 120, 220);
+        message =
+          'The lens reveals an old vow: leave room for every wild thing. A tangled echo waits in the northern garden. Answer its three tones.';
+      } else if (id === 'warden') {
+        ensure(w.stage === 4, 'The echo is already at peace.');
+        if (
+          w.challenge &&
+          w.challenge.nodes.length === 3 &&
+          now - w.challenge.started <= 45_000
+        ) {
+          finish('echo', 'Calmed the tangled echo', 5, 200, 400);
+          add('star_crown');
+          add('ticket', 2);
+          w.challenge = null;
+          s.stats.battles++;
+        } else {
+          w.challenge = { started: now, nodes: [] };
+          message =
+            'Touch the three echo stones and return within 45 seconds. A fresh attempt has begun.';
+        }
+      } else if (object.kind === 'tone') {
+        ensure(
+          w.challenge && now - w.challenge.started <= 45_000,
+          'Return to the tangled echo to begin the challenge.',
+        );
+        ensure(
+          !w.challenge.nodes.includes(id),
+          'This tone has already answered.',
+        );
+        w.challenge.nodes.push(id);
+        message = `${w.challenge.nodes.length}/3 tones answered. Return to the echo before time runs out.`;
+      } else if (id === 'gate') {
+        ensure(w.stage === 5, 'The orchard is already open.');
+        finish('orchard', 'Opened the listening orchard', 6, 250, 500);
+        add('ticket', 3);
+        p.bond = clamp(p.bond + 5);
+      } else if (id === 'camp') {
+        cooldown('world_rest', 60_000);
+        w.checkpoint = id;
+        p.energy = clamp(p.energy + 30);
+        record('camp', 'Rested at the meadow checkpoint');
+        message = 'Checkpoint saved. Your companion feels rested.';
+      } else
+        message =
+          id === 'pip'
+            ? 'Pip: Provisions for the path ahead.'
+            : 'The Moonwell is ready for your wishes.';
+      if (
+        w.stage === 2 &&
+        ['shard-a', 'shard-b', 'shard-c'].every((id) =>
+          w.collected.includes(id),
+        )
+      )
+        finish('glass', 'Gathered the meadow’s memory glass', 3, 80, 150);
+      break;
+    }
     case 'login': {
+      if (!s.welcomeGift) {
+        s.welcomeGift = true;
+        grant('PC', 500, 'WELCOME_GIFT_UPGRADE');
+        add('ribbon');
+        add('moon_collar');
+      }
+      s.loginGifts ??= { day: '', days: 0 };
+      if (s.loginGifts.day !== day(now) && s.loginGifts.days < 7) {
+        s.loginGifts.day = day(now);
+        s.loginGifts.days++;
+        const gift = s.loginGifts.days;
+        if (gift === 2) add('food', 3);
+        if (gift === 3) add('exp_bottle', 2);
+        if (gift === 4) add('ticket');
+        if (gift === 5) add('potion', 3);
+        if (gift === 6) add('ticket', 2);
+        if (gift === 7) add('aurora');
+      }
       if (s.streak.day !== day(now)) {
         s.streak.count =
           s.streak.day === day(now - 86_400_000) ? s.streak.count + 1 : 1;
@@ -175,10 +399,7 @@ export function applyIntent(
     case 'create_pet': {
       ensure(!s.pet, 'Your companion is already waiting.');
       const species = textValue(intent.species) as Species;
-      ensure(
-        ['cat', 'dog', 'fusion'].includes(species),
-        'Choose a starter species.',
-      );
+      ensure(['cat', 'dog'].includes(species), 'Choose a starter species.');
       const personality = textValue(intent.personality) as Personality;
       ensure(
         ['Playful', 'Curious', 'Brave', 'Sleepy', 'Shy', 'Calm'].includes(
@@ -195,7 +416,11 @@ export function applyIntent(
         cleanliness: 90,
         energy: 100,
         bond: 10,
-        appearance: '/assets/companion.webp',
+        appearance:
+          intent.designId === 'starlight'
+            ? '/assets/starlight-rig.png'
+            : '/assets/companion-rig.png',
+        appearanceFormat: 'companion-atlas-v1',
         equipped: [],
       };
       message = `Meet ${s.pet.name}. Your story begins here.`;
@@ -276,7 +501,8 @@ export function applyIntent(
         quantity = intValue(intent.quantity, 1, 100),
         price = c.prices[id];
       ensure(
-        ITEMS.some((i) => i.id === id) &&
+        id !== 'fusion_token' &&
+          ITEMS.some((i) => i.id === id) &&
           Number.isSafeInteger(price) &&
           price > 0,
         'This item is not for sale.',
@@ -445,7 +671,7 @@ export function applyIntent(
       }
       let damage = 0;
       const critical = ctx.random() < 0.12 + p.bond / 1000;
-      const attack = 12 + level() * 4;
+      const attack = 12 + level() * 4 + accessoryBonus(s).attack;
       if (move === 'defend') {
         b.guard = 1;
         b.hp = Math.min(b.maxHp, b.hp + Math.floor(b.maxHp * 0.08));
@@ -522,6 +748,85 @@ export function applyIntent(
         }
       }
       b.log = b.log.slice(-20);
+      break;
+    }
+    case 'kitten_start': {
+      pet();
+      ensure(
+        !s.kittenRound || s.kittenRound.finished,
+        'Finish your current basket first.',
+      );
+      cooldown('kitten_start', 3000);
+      s.kittenRound = {
+        id: ctx.id(),
+        started: now,
+        updated: now,
+        drops: 0,
+        next: rand(0, 2),
+        score: 0,
+        merges: 0,
+        balls: [],
+        finished: false,
+      };
+      message = 'Your basket is ready.';
+      break;
+    }
+    case 'kitten_drop': {
+      const round = s.kittenRound;
+      ensure(
+        round && !round.finished && round.id === intent.id,
+        'Start a new basket.',
+      );
+      ensure(
+        round.drops === intent.step,
+        'That kitten has already been dropped.',
+        409,
+      );
+      ensure(now - round.updated >= 650, 'Let the kittens settle.', 429);
+      ensure(
+        now - round.started < 30 * 60_000,
+        'This basket has timed out. Finish it and start again.',
+      );
+      const x = intValue(intent.x, 0, 360);
+      const next = dropKitten(round, x);
+      next.next = rand(0, 2);
+      next.updated = now;
+      s.kittenRound = next;
+      s.kittenBest = Math.max(s.kittenBest || 0, next.score);
+      message = next.finished
+        ? 'The basket is full.'
+        : 'Keep matching kittens.';
+      break;
+    }
+    case 'kitten_finish': {
+      const p = pet(),
+        round = s.kittenRound;
+      ensure(
+        round && round.id === intent.id,
+        'This basket has already been collected.',
+      );
+      if (
+        round.score >= 120 &&
+        round.merges >= 4 &&
+        round.drops >= 8 &&
+        now - round.started >= 10000 &&
+        s.daily.play < c.minigameLimit
+      ) {
+        s.daily.play++;
+        grant('PC', c.playCoins, 'MINIGAME_REWARD');
+        grant('XP', 60, 'MINIGAME_REWARD');
+        task('minigame');
+        task('bond');
+        p.happiness = clamp(p.happiness + 15);
+        p.bond = clamp(p.bond + 2);
+        message = 'Basket complete. Your play reward is saved.';
+      } else
+        message =
+          round.score >= 120
+            ? 'Score saved. Rewarded games resume tomorrow.'
+            : 'Score saved. Reach 120 points with at least 8 drops for a play reward.';
+      s.kittenBest = Math.max(s.kittenBest || 0, round.score);
+      s.kittenRound = null;
       break;
     }
     case 'minigame_start': {
@@ -605,14 +910,15 @@ export function applyIntent(
       pet();
       const count = intValue(intent.count, 1, 10);
       ensure(count === 1 || count === 10, 'Choose one or ten wishes.');
-      take('ticket', count);
+      if (intent.payment === 'coins') pay(160 * count);
+      else take('ticket', count);
       rewards = [];
       const rarities: Rarity[] = [
           'Common',
-          'Rare',
+          'Uncommon',
           'Epic',
           'Legendary',
-          'Mythic',
+          'Superior',
         ],
         pool = ['ribbon', 'moon_collar', 'star_crown', 'aurora', 'moon_fox'];
       for (let n = 0; n < count; n++) {
@@ -638,6 +944,8 @@ export function applyIntent(
         if (rank >= 3) s.gacha.legendary = 0;
         if (rank === 4) s.gacha.mythic = 0;
         const item = pool[rank];
+        const duplicateCoins =
+          (s.inventory[item] ?? 0) > 0 ? (rank + 1) * 40 : 0;
         if ((s.inventory[item] ?? 0) > 0)
           grant('PC', (rank + 1) * 40, 'GACHA_DUPLICATE');
         else add(item);
@@ -646,8 +954,11 @@ export function applyIntent(
           item,
           rarity: rarities[rank],
           time: now,
+          duplicateCoins,
+          payment: intent.payment === 'coins' ? 'coins' : 'tickets',
+          cost: intent.payment === 'coins' ? 160 : 1,
         });
-        rewards.push({ item, rarity: rarities[rank] });
+        rewards.push({ item, rarity: rarities[rank], duplicateCoins });
       }
       s.gacha.history = s.gacha.history.slice(0, 100);
       message = 'The Moonwell has answered your wish.';
@@ -686,9 +997,12 @@ export function applyIntent(
         );
       ensure(builtin || owned?.url, 'Choose one of your available companions.');
       const p = pet();
+      s.petNames ??= {};
+      s.petNames[p.appearance] = p.name;
       p.appearance = builtin?.url || owned!.url!;
       p.appearanceFormat = 'companion-atlas-v1';
-      message = 'A new look, the same forever friend.';
+      p.name = s.petNames[p.appearance] || builtin?.name || 'Companion';
+      message = `${p.name} is ready to join you.`;
       break;
     }
     case 'generation_open': {
@@ -815,7 +1129,9 @@ export function applyIntent(
     perfect_groom: s.stats.grooms >= 1,
     best_friend: (s.pet?.bond ?? 0) >= 80,
     treasure_hunter: s.stats.expeditions >= 10,
-    lucky_pull: s.gacha.history.some((x) => x.rarity === 'Mythic'),
+    lucky_pull: s.gacha.history.some(
+      (x) => x.rarity === 'Superior' || String(x.rarity) === 'Mythic',
+    ),
     legendary_collector: s.gacha.history.some((x) => x.rarity === 'Legendary'),
     fusion_pioneer: s.generations.some(
       (g) => g.kind === 'fusion' && g.selected,

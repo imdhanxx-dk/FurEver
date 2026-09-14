@@ -8,6 +8,7 @@ export default function Onboarding({
 }: Pick<ScreenProps, 'act' | 'busy'>) {
   const [name, setName] = useState('Mochi'),
     [species, setSpecies] = useState('cat'),
+    [designId, setDesignId] = useState('sunbeam'),
     [personality, setPersonality] = useState('Curious');
   return (
     <div className="onboarding">
@@ -18,13 +19,35 @@ export default function Onboarding({
       />
       <div className="onboarding-grid">
         <div className="onboarding-pet">
-          <Pet pet={null} audio={null} compact />
+          <Pet
+            audio={null}
+            compact
+            pet={{
+              name,
+              species: species as 'cat' | 'dog',
+              personality: 'Curious',
+              hunger: 85,
+              happiness: 85,
+              cleanliness: 90,
+              energy: 100,
+              bond: 10,
+              appearance: `/assets/${designId === 'starlight' ? 'starlight' : 'companion'}-rig.png`,
+              appearanceFormat: 'companion-atlas-v1',
+              equipped: [],
+            }}
+          />
         </div>
         <form
           className="panel form-stack"
           onSubmit={(e) => {
             e.preventDefault();
-            void act({ action: 'create_pet', name, species, personality });
+            void act({
+              action: 'create_pet',
+              name,
+              species,
+              personality,
+              designId,
+            });
           }}
         >
           <label className="field">
@@ -40,8 +63,14 @@ export default function Onboarding({
           <Choice
             label="Starter species"
             value={species}
-            options={['cat', 'dog', 'fusion']}
+            options={['cat', 'dog']}
             onChange={setSpecies}
+          />
+          <Choice
+            label="Companion"
+            value={designId}
+            options={['sunbeam', 'starlight']}
+            onChange={setDesignId}
           />
           <Choice
             label="Personality"
@@ -50,15 +79,16 @@ export default function Onboarding({
             onChange={setPersonality}
           />
           <p className="muted">
-            All starters begin with our sanctuary companion. Create your own
-            animated character in the Creative Studio after you meet.
+            Your name, friendship and progress are saved to your Discord
+            account.
           </p>
           <button className="primary" disabled={busy || !name.trim()}>
             Meet {name || 'your companion'} ♡
           </button>
           <small>
-            Your starter backpack includes food, elixirs, growth nectar, and
-            three wishes.
+            Welcome gift: 1,000 PC, a Meadow ribbon and Moonstone collar, plus
+            food, elixirs and three wishes. Visit on seven days to earn a
+            Legendary Aurora aura.
           </small>
         </form>
       </div>

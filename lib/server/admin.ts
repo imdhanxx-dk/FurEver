@@ -92,6 +92,32 @@ export async function adminRead(
   search: string,
 ) {
   requireAdmin(s, db.env);
+  if (section === 'beta') {
+    const [settings, players] = await Promise.all([
+      db.request<{ value: GameConfig }[]>(
+        'game_config?id=eq.main&select=value',
+      ),
+      db.request<
+        { discord_id: string; display_name: string; username: string }[]
+      >(
+        'users?select=discord_id,display_name,username&order=created_at.desc&limit=200',
+      ),
+    ]);
+    const approved = settings[0]?.value.betaDiscordIds || [];
+    for (const discord_id of approved)
+      if (!players.some((p) => p.discord_id === discord_id))
+        players.push({
+          discord_id,
+          display_name: 'Not signed in yet',
+          username: '',
+        });
+    return {
+      rows: players
+        .filter((p) => p.discord_id !== db.env.ADMIN_DISCORD_ID)
+        .map((p) => ({ ...p, approved: approved.includes(p.discord_id) })),
+      approved,
+    };
+  }
   const allowed: Record<string, string> = {
     players:
       'users?select=id,discord_id,display_name,username,suspended,created_at&order=created_at.desc&limit=50',
@@ -124,6 +150,49 @@ export async function adminAction(
 ) {
   requireAdmin(s, db.env);
   const action = textValue(b.action);
+  if (action === 'beta_access') {
+    const discordId = textValue(b.discordId, 20, 17);
+    ensure(
+      /^\d{17,20}$/.test(discordId) && typeof b.approved === 'boolean',
+      'Enter a valid Discord user ID.',
+    );
+    ensure(
+      discordId !== db.env.ADMIN_DISCORD_ID,
+      'The owner always has beta access.',
+    );
+    for (let retry = 0; retry < 5; retry++) {
+      const rows = await db.request<{ value: GameConfig; revision: number }[]>(
+        'game_config?id=eq.main&select=value,revision',
+      );
+      const config = rows[0]?.value || structuredClone(DEFAULT_CONFIG);
+      const ids = new Set(config.betaDiscordIds || []);
+      if (b.approved) ids.add(discordId);
+      else ids.delete(discordId);
+      ensure(ids.size <= 1000, 'The beta access list is full.');
+      try {
+        await db.rpc('set_config', {
+          p_actor: s.user_id,
+          p_value: { ...config, betaDiscordIds: [...ids] },
+          p_revision: rows[0]?.revision || 0,
+        });
+        return {
+          message: b.approved
+            ? 'Beta access approved.'
+            : 'Beta access revoked. Future requests are blocked immediately.',
+        };
+      } catch (e) {
+        if (
+          !(
+            e instanceof Error &&
+            'code' in e &&
+            e.code === 'VERSION_CONFLICT'
+          ) ||
+          retry === 4
+        )
+          throw e;
+      }
+    }
+  }
   if (action === 'grant') {
     const target = textValue(b.userId, 36);
     ensure(/^[a-f0-9-]{36}$/.test(target), 'Invalid player.');
@@ -157,9 +226,15 @@ export async function adminAction(
     return { message: 'Player access updated and audited.' };
   }
   if (action === 'configure') {
+    const rows = await db.request<{ value: GameConfig }[]>(
+      'game_config?id=eq.main&select=value',
+    );
     await db.rpc('set_config', {
       p_actor: s.user_id,
-      p_value: validateConfig(b.config),
+      p_value: {
+        ...validateConfig(b.config),
+        betaDiscordIds: rows[0]?.value.betaDiscordIds || [],
+      },
       p_revision: intValue(b.revision, 0, 100000000),
     });
     return { message: 'Configuration saved.' };

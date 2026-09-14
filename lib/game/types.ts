@@ -6,7 +6,7 @@ export type Personality =
   | 'Sleepy'
   | 'Shy'
   | 'Calm';
-export type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
+export type Rarity = 'Common' | 'Uncommon' | 'Epic' | 'Legendary' | 'Superior';
 export type Item = {
   id: string;
   name: string;
@@ -81,6 +81,10 @@ export type Generation = {
   }[];
 };
 export type PlayerState = {
+  welcomeGift?: boolean;
+  loginGifts?: { day: string; days: number };
+  kittenRound?: import('./kitten-drop').KittenRound | null;
+  kittenBest?: number;
   version: 1;
   coins: number;
   xp: number;
@@ -111,13 +115,35 @@ export type PlayerState = {
     epic: number;
     legendary: number;
     mythic: number;
-    history: { id: string; item: string; rarity: Rarity; time: number }[];
+    history: {
+      id: string;
+      item: string;
+      rarity: Rarity;
+      time: number;
+      duplicateCoins?: number;
+      payment?: 'tickets' | 'coins';
+      cost?: number;
+    }[];
   };
   generations: Generation[];
   achievements: string[];
   stats: { battles: number; expeditions: number; grooms: number };
   event: { id: string; tokens: number; claimed: string[] };
   lastSeen: number;
+  world?: WorldProgress;
+  petNames?: Record<string, string>;
+};
+export type WorldProgress = {
+  position: [number, number];
+  updated: number;
+  stage: number;
+  collected: string[];
+  discovered: string[];
+  quests: string[];
+  secrets: string[];
+  checkpoint: string;
+  challenge: { started: number; nodes: string[] } | null;
+  history: { id: string; title: string; time: number }[];
 };
 export type LedgerEntry = {
   kind: string;
@@ -135,6 +161,7 @@ export type Context = {
   config: GameConfig;
 };
 export type GameConfig = {
+  betaDiscordIds?: string[];
   name: string;
   maintenance: boolean;
   prices: Record<string, number>;
@@ -166,8 +193,9 @@ export type GameConfig = {
 };
 export type Intent = { action: string; [key: string]: unknown };
 export type GameResult = {
+  revision?: number;
   state: PlayerState;
   message: string;
   ledger: LedgerEntry[];
-  rewards?: { item: string; rarity: Rarity }[];
+  rewards?: { item: string; rarity: Rarity; duplicateCoins?: number }[];
 };

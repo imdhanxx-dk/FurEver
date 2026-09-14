@@ -12,10 +12,10 @@ import {
   type CareKind,
 } from '@/lib/client/companion-motion';
 import {
-  prepareCompanionAtlas,
   drawCompanion,
   type CompanionAtlas,
 } from '@/lib/client/companion-renderer';
+import { loadCompanionAtlas } from '@/lib/client/companion-assets';
 
 const LINES: Partial<Record<PetReaction, string>> = {
   pet: 'Purrr… that’s my favorite spot.',
@@ -29,8 +29,6 @@ const LINES: Partial<Record<PetReaction, string>> = {
   play: 'Catch me if you can!',
   rest: 'Stay a little… zzz.',
   train: 'One, two… we can do this!',
-  listen: 'I’m listening!',
-  talk: 'Did I sound like you?',
 };
 export default function Pet({
   pet,
@@ -43,6 +41,7 @@ export default function Pet({
   busy = false,
   design,
   onReady,
+  interactive = true,
 }: {
   pet: PetData | null;
   audio: GameAudio | null;
@@ -54,6 +53,7 @@ export default function Pet({
   busy?: boolean;
   design?: { url?: string; format?: string };
   onReady?: (ready: boolean) => void;
+  interactive?: boolean;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const live = useRef({
@@ -95,11 +95,8 @@ export default function Pet({
       live.current.started = performance.now();
       setReaction(kind);
       setLine(text ?? LINES[kind] ?? '');
-      if (kind !== 'listen' && kind !== 'talk')
-        audio?.react(
-          kind === 'defensive' ? 'defensive' : 'happy',
-          pet?.species,
-        );
+
+      audio?.react(kind === 'defensive' ? 'defensive' : 'happy', pet?.species);
       if (reset.current) clearTimeout(reset.current);
       reset.current = setTimeout(() => {
         live.current.kind = 'idle';
@@ -132,7 +129,8 @@ export default function Pet({
     let disposed = false,
       frame = 0,
       atlas: CompanionAtlas | undefined,
-      lastFrame = 0;
+      lastFrame = 0,
+      visible = true;
     let smooth = sampleCompanionPose('idle', 0, 0, { x: 0, y: 0 });
     const media = matchMedia('(prefers-reduced-motion: reduce)');
     const resize = new ResizeObserver(() => {
@@ -141,9 +139,12 @@ export default function Pet({
       surface.style.width = surface.style.height = `${size}px`;
     });
     resize.observe(surface.parentElement!);
-    const image = new Image();
     const paint = (time: number) => {
       if (disposed) return;
+      if (!atlas || !visible || document.hidden) {
+        frame = 0;
+        return;
+      }
       frame = requestAnimationFrame(paint);
       if (
         !atlas ||
@@ -155,7 +156,7 @@ export default function Pet({
       lastFrame = time;
       const ratio = Math.min(devicePixelRatio || 1, 2);
       const size = Math.max(300, Math.round(surface.clientWidth * ratio));
-      if (surface.width !== size) {
+      if (surface.width !== size || surface.height !== size) {
         surface.width = size;
         surface.height = size;
       }
@@ -191,33 +192,42 @@ export default function Pet({
       smooth.active = pose.active;
       drawCompanion(ctx, atlas, smooth, state.equipped);
     };
-    image.onload = () => {
-      if (disposed) return;
-      try {
-        atlas = prepareCompanionAtlas(
-          image,
-          source === '/assets/starlight-rig.png' ? 'starlight' : undefined,
-        );
-        setLoaded(true);
-        onReadyRef.current?.(true);
+    const resume = () => {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      if (!disposed && atlas && visible && !document.hidden) {
+        lastFrame = 0;
         frame = requestAnimationFrame(paint);
-      } catch {
-        setLoadFailed(true);
       }
     };
-    image.onerror = () => {
-      if (!disposed) setLoadFailed(true);
-    };
-    image.src = source;
+    const visibility = new IntersectionObserver((entries) => {
+      visible = entries[0]?.isIntersecting ?? false;
+      resume();
+    });
+    visibility.observe(surface);
+    document.addEventListener('visibilitychange', resume);
+    void loadCompanionAtlas(source)
+      .then((result) => {
+        if (disposed) return;
+        atlas = result;
+        setLoaded(true);
+        onReadyRef.current?.(true);
+        resume();
+      })
+      .catch(() => {
+        if (!disposed) setLoadFailed(true);
+      });
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
       resize.disconnect();
-      image.onload = image.onerror = null;
+      visibility.disconnect();
+      document.removeEventListener('visibilitychange', resume);
     };
   }, [source]);
 
   const touch = (zone: ReturnType<typeof companionHit>) => {
+    if (!interactive) return;
     const now = Date.now();
     if (!zone || now < cooldown.current.boundary) return;
     if (zone === 'private') {
@@ -263,15 +273,20 @@ export default function Pet({
   return (
     <div
       className={`pet-runtime articulated-pet ${reaction} ${compact ? 'compact' : ''}`}
+      data-interactive={interactive}
     >
       <canvas
         ref={canvas}
         className={`companion-canvas ${loaded ? 'ready' : ''}`}
-        role="button"
-        tabIndex={0}
-        aria-label={`Interact with ${pet?.name || 'your companion'}. Stroke the head, tap a paw for a high five, or press Enter to pet.`}
+        role={interactive ? 'button' : 'img'}
+        tabIndex={interactive ? 0 : undefined}
+        aria-label={
+          interactive
+            ? `Interact with ${pet?.name || 'your companion'}. Stroke the head, tap a paw for a high five, or press Enter to pet.`
+            : `${pet?.name || 'Companion'} animated preview`
+        }
         onPointerDown={(e) => {
-          if (e.button !== 0) return;
+          if (!interactive || e.button !== 0) return;
           const p = point(e);
           if (!companionHit(p.x, p.y)) return;
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -283,6 +298,7 @@ export default function Pet({
           };
         }}
         onPointerMove={(e) => {
+          if (!interactive) return;
           const p = point(e);
           live.current.look = { x: (p.x - 0.5) * 2, y: (p.y - 0.4) * 2 };
           const g = gesture.current;
@@ -324,10 +340,12 @@ export default function Pet({
           }
         }}
         onDragOver={(e) => {
+          if (!interactive) return;
           if (e.dataTransfer.types.includes('application/x-furever-care'))
             e.preventDefault();
         }}
         onDrop={(e) => {
+          if (!interactive) return;
           e.preventDefault();
           const kind = e.dataTransfer.getData('application/x-furever-care');
           if (!busy && ['feed', 'groom', 'play'].includes(kind))

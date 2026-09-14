@@ -33,5 +33,4 @@ export function databaseHeaders(env: Env): Record<string, string> {
     : { apikey: key, Authorization: `Bearer ${key}` };
 }
 
-export const studioEnabled = (env: Env) =>
-  !!env.AI_PROVIDER_API_KEY && env.AI_STUDIO_ENABLED === 'true';
+export const studioEnabled = (_env: Env) => false;

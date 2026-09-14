@@ -1,26 +1,32 @@
-# FurEver private release status
+# FurEver approval-only beta
 
-## September 2026 companion update
+Target: https://furever-beta-sigma.vercel.app
 
-- Articulated canvas companion: independent paws, head, feet and tail; six facial states; grounded breathing, blinking, head tracking, stroking, high fives, tickling and distinct care clips.
-- Time-based animation with eased transitions, device-pixel-ratio cap, hidden-tab drawing suspension and reduced-motion support. Offline native-canvas compositions were visually inspected; this does not establish browser or phone frame rates.
-- Optional local microphone record/replay. Recording stops after 6.5 seconds, on page hide or on unmount. Audio is never uploaded and its object URL is released after playback.
-- Warm mint, honey and cream UI with a new moonlit cottage. Entry and onboarding use the same articulated companion.
-- Creative Studio key and enabled flag configured in encrypted hosting settings. Image requests use gpt-image-2.5-flare, medium quality, PNG output and private storage. One live Images API request succeeded and its new blue fox was assembled and visually inspected with the production renderer. The complete signed-in game save/selection round trip remains to be verified.
-- Real-money checkout closed at the server. Navigation uses Mora exchange; earned Pet Coins and normal shop transactions remain.
+## Included
+
+- The existing illustrated FurEver home and saved companion designs, integrated from the latest GitHub main branch. Desktop play is contained in a centered frame. The polygon town prototype is not the home screen.
+- Animated assembled companions in battle; attacks, guarding and health changes show inline. Routine battle notifications and the level-up modal are removed. Level gains float beside the level.
+- Kitten Drop: a cat merge puzzle with server-replayed physics, saved rounds, scoring and once-only capped rewards. Grooming remains available.
+- Owner-approved Discord beta access. Main menu → Admin → Beta access accepts Discord IDs. Unapproved players see a waiting screen; protected reads and writes are denied. Revocation is checked on every request.
+- Welcome gift of 1,000 PC, Meadow ribbon and Moonstone collar. Existing players receive a one-time 500 PC adjustment. Seven separate visit days award gifts ending with the Legendary Aurora aura; a missed day keeps progress.
+- Separate companion names and selection, current-game achievements, five-tier wishes with single/ten pulls and skip, atomic spending and reward receipts.
+- Voice, paid checkout, Creative Studio and Fusion Lab are closed for beta. No AI image-generation calls are made.
+- All three existing custom pet images copied to private Supabase Storage and verified byte-for-byte. No player progress was replaced.
 
 ## Validation
 
-- 46 automated tests cover motion timing, hit zones, reduced motion, explicit Studio activation, game rules, server authority, uploads, PostgreSQL transactions, reward replay prevention, Mora settlement and historical webhook signatures.
-- Strict TypeScript passes; Worker and Next.js builds are required for this update.
-- Discord sign-in and persisted player records exist on the private host. Supabase uses four applied migrations and server-only access.
-- The owner-provided notification webhook is configured; development did not send a test message.
+58 automated checks pass, including PostgreSQL transaction/retry rules, beta route denial and revocation, welcome rewards, seven-day gifts, puzzle replay, world collision and companion motion. Production builds and live smoke checks are recorded in the release task. General lint still reports existing and new legacy-pattern cleanup work; this is a limited beta, not a claim of a clean lint baseline or finished art.
 
-## Remaining limits
+## Beta test route
 
-- This is articulated 2D animation, not full 3D animation or complete Talking Tom feature parity. Faces use expression swaps rather than facial deformation or phoneme-driven lips.
-- Cat, dog and fusion identities currently share the animated sanctuary character. New custom pet/fusion designs use a generated twelve-part atlas and replace the animated starter on selection. Older portrait-only designs remain saved artwork. The supported body layout is a front-facing chibi companion; unusual anatomy may need another design attempt or authored rigging.
-- Real microphone playback, mobile layout/input, animation frame rates and generated-image selection need device/browser verification. Offline rendering and automated tests do not replace these checks.
-- Region gameplay, loot and combat are implemented; bespoke biome scenes, enemy rigs and a recorded species sound library remain art work.
-- Events are configured by an operator. Analytics, refunds for historical payments, retention jobs and generation recovery tooling are not complete.
-- Sites publication currently retains owner-only access. This update does not change the audience or claim the full original vision is ready for a public launch.
+1. Open the beta address, sign in with Discord, and check owner access or the pending approval screen.
+2. The owner approves a tester's exact Discord user ID in Admin → Beta access. The tester chooses Check access.
+3. Name a companion, feed or pet it, switch looks, then reload to confirm the saved name and wallet.
+4. In Explore, choose an unlocked location and challenge its guardian. Attack, defend, use a tonic, finish or retreat. Confirm the full companion, inline feedback and saved rewards.
+5. Open Minigames, start Kitten Drop, aim and drop matching cats. Complete a qualifying round; confirm one reward and the saved best score.
+6. Inspect Daily adventures for welcome and seven-day gifts. Reopening on the same UTC day must not duplicate gifts.
+7. Revoke tester approval; the same signed-in session must lose access on its next request.
+
+## Known limits
+
+Battle uses a shared shadow-cat guardian appearance for region enemies. The separate top-down prototype and directional sprite art need further art review; they do not replace the illustrated home. Custom characters use authored front-facing joints rather than full directional animation. Frame rate on physical phones has not been measured.

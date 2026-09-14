@@ -11,7 +11,8 @@ import {
   assertCsrf,
   secureResponse,
 } from './security';
-import { createIdentity, transact } from './game-service';
+import { createIdentity, gameConfig, transact } from './game-service';
+import { betaApproved } from './beta-access';
 import { ensure } from '../game/engine';
 export async function login(request: Request, env: Env) {
   const origin = env.APP_ORIGIN || new URL(request.url).origin;
@@ -111,12 +112,20 @@ export async function callback(request: Request, env: Env) {
     csrf: token(),
     expires_at: new Date(Date.now() + 7 * 86400_000).toISOString(),
   });
-  await transact(
-    db,
-    uid,
-    { action: 'login' },
-    `login:${new Date().toISOString().slice(0, 10)}`,
-  );
+  if (
+    betaApproved(
+      user.id,
+      env.ADMIN_DISCORD_ID,
+      (await gameConfig(db)).betaDiscordIds,
+    )
+  ) {
+    await transact(
+      db,
+      uid,
+      { action: 'login' },
+      `login-beta:${new Date().toISOString().slice(0, 10)}`,
+    );
+  }
   const headers = new Headers({
     Location: `${required(env, 'APP_ORIGIN')}/home`,
     'Cache-Control': 'no-store',

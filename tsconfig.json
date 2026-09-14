@@ -40,6 +40,8 @@
   ],
   "exclude": [
     "node_modules",
+    "outputs",
+    "work",
     "next-env.d.ts",
     ".next",
     ".next-vercel",

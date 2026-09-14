@@ -11,8 +11,10 @@ export type PetReaction =
   | 'play'
   | 'rest'
   | 'train'
-  | 'listen'
-  | 'talk';
+  | 'attack'
+  | 'guard'
+  | 'victory';
+export type BattleReaction = 'attack' | 'guard' | 'victory';
 export type CareKind = 'feed' | 'pet' | 'groom' | 'play' | 'rest' | 'train';
 export type PetCue = { kind: PetReaction; id: number };
 export const REACTION_LENGTH: Record<PetReaction, number> = {
@@ -28,8 +30,9 @@ export const REACTION_LENGTH: Record<PetReaction, number> = {
   play: 5000,
   rest: 10000,
   train: 4400,
-  listen: 8000,
-  talk: 8000,
+  attack: 900,
+  guard: 1100,
+  victory: 1800,
 };
 export const clamp = (v: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, v));
@@ -124,14 +127,22 @@ export function sampleCompanionPose(
       pose.body = 3 * weight;
       pose.tail *= 0.25;
       break;
-    case 'listen':
-      pose.head -= 12 * weight;
-      pose.face = 0;
+    case 'attack':
+      pose.body = -10 * weight;
+      pose.rightArm = -100 * Math.sin(Math.PI * Math.min(1, t / 0.7));
+      pose.leftFoot = 18 * weight;
+      pose.face = 3;
       break;
-    case 'talk':
-      pose.face = Math.sin(t * 16) > 0 ? 9 : 0;
-      pose.head += wave * 3 * weight;
-      pose.rightArm += 15 * weight;
+    case 'guard':
+      pose.leftArm = -50 * weight;
+      pose.rightArm = 50 * weight;
+      pose.headY = 12 * weight;
+      pose.face = 2;
+      break;
+    case 'victory':
+      pose.rightArm = -115 * weight;
+      pose.head = Math.sin(t * 8) * 8 * weight;
+      pose.face = 1;
       break;
   }
   if (reduced) {

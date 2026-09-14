@@ -1,4 +1,4 @@
-import { environment, configured, studioEnabled } from './env';
+import { environment, configured } from './env';
 import { Database } from './database';
 import {
   errorResponse,
@@ -16,9 +16,10 @@ import { gameConfig, publicState, readPlayer, transact } from './game-service';
 import { GameError, ensure, textValue, intValue } from '../game/engine';
 import type { Intent } from '../game/types';
 import { webhook } from './payments';
-import { generate, getAsset } from './generation';
+import { getAsset } from './assets';
 import { adminRead, adminAction } from './admin';
 import { deliverOutbox } from './discord';
+import { hasBetaAccess, publicConfig } from './beta-access';
 const ACTIONS = new Set([
   'create_pet',
   'care',
@@ -27,6 +28,9 @@ const ACTIONS = new Set([
   'buy',
   'equip',
   'companion_equip',
+  'rename_pet',
+  'world_sync',
+  'world_interact',
   'claim_daily',
   'explore_start',
   'explore_step',
@@ -36,10 +40,11 @@ const ACTIONS = new Set([
   'minigame_start',
   'minigame_hit',
   'minigame_cancel',
+  'kitten_start',
+  'kitten_drop',
+  'kitten_finish',
   'gacha',
   'event_claim',
-  'generation_open',
-  'generation_select',
 ]);
 export async function handle(request: Request) {
   let uid: string | undefined;
@@ -76,11 +81,37 @@ export async function handle(request: Request) {
     const s = await session(request, db);
     uid = s.user_id;
     const admin = isAdmin(s, env);
+    // Re-check every request, including existing sessions and private assets.
+    // Missing configuration fails closed; only the owner has automatic access.
+    const approved = await hasBetaAccess(db, s);
+    if (!approved && path === 'bootstrap' && method === 'GET')
+      return secureResponse({
+        authenticated: true,
+        betaPending: true,
+        csrf: s.csrf,
+        user: {
+          id: uid,
+          display_name: s.users.display_name,
+          discord_id: s.users.discord_id,
+          admin: false,
+        },
+      });
+    ensure(
+      approved,
+      'Your beta access is awaiting approval from the game owner.',
+      403,
+    );
     if (method !== 'GET') {
       assertCsrf(request, s, env);
       await rateLimit(db, `write:${uid}`, 90, 60);
     }
     if (path === 'bootstrap' && method === 'GET') {
+      await transact(
+        db,
+        uid,
+        { action: 'login' },
+        `login-beta:${new Date().toISOString().slice(0, 10)}`,
+      );
       const [row, config] = await Promise.all([
         readPlayer(db, uid),
         gameConfig(db),
@@ -89,10 +120,11 @@ export async function handle(request: Request) {
         authenticated: true,
         user: { id: uid, ...s.users, admin },
         state: publicState(row.state),
+        revision: row.revision,
         csrf: s.csrf,
-        config,
+        config: publicConfig(config),
         capabilities: {
-          ai: studioEnabled(env),
+          ai: false,
           payments: false,
         },
       });
@@ -122,18 +154,10 @@ export async function handle(request: Request) {
       'A unique request key is required.',
     );
     if (path === 'generate') {
-      await rateLimit(db, `generation:${uid}`, admin ? 100 : 10, 3600);
-      ensure(
-        (Number(request.headers.get('content-length')) || 0) <= 4_300_000,
-        'Image upload is too large.',
-        413,
+      throw new GameError(
+        'Creative Studio and Fusion Lab are closed for this beta.',
+        410,
       );
-      const bounded = await limitedBytes(request, 4_300_000);
-      const data = await new Response(bounded, {
-        headers: { 'Content-Type': request.headers.get('content-type') || '' },
-      }).formData();
-      const result = await generate(db, uid, data, key, admin);
-      return secureResponse({ ...result, state: publicState(result.state) });
     }
     const b = await body(request, path === 'admin/action' ? 30000 : 12000);
     if (path === 'action') {

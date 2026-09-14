@@ -1,0 +1,221 @@
+/* Keep the approved illustrated game in a contained, responsive play area. */
+.fe-world-hub { background: linear-gradient(#13251b0a,#13251b30),url('/assets/meadow-world.png') center/cover; }
+.release-wordmark { font-family: 'Trebuchet MS',system-ui,sans-serif; font-size:2.2rem;letter-spacing:-.08em;font-weight:900; }
+.asset-brand { gap:10px; }
+.fe-world-title { color:#403236; }
+.furever-app {
+  width: calc(100% - 32px);
+  max-width: 1360px;
+  margin: 20px auto;
+  border-radius: 24px;
+  overflow: clip;
+  box-shadow: 0 16px 60px #142b3620;
+}
+.furever-app:has(.fe-world-hub) .game-inset {
+  min-height: 0;
+}
+.furever-app:has(.fe-world-hub) .game-content {
+  min-height: 0;
+}
+.furever-app:has(.fe-world-hub) .topbar {
+  display: flex !important;
+  position: relative;
+}
+.fe-player-hud,
+.fe-region-hud,
+.fe-coin-hud,
+.fe-pet-bubble,
+.fe-world-mantra {
+  display: none;
+}
+.fe-story-link {
+  position: absolute;
+  left: 4%;
+  bottom: 10%;
+  z-index: 31;
+  color: #fff6e8;
+  text-shadow: 0 2px 5px #152a28;
+  background: #253e39cf;
+  border: 1px solid #fff3;
+  padding: 12px 16px;
+  border-radius: 18px;
+}
+.fe-world-title {
+  top: 4%;
+  pointer-events: none;
+}
+.fe-world-title h1 {
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 1;
+}
+.fe-world-title > p {
+  display: none;
+}
+.fe-logo-image {
+  max-height: 68px;
+  width: auto;
+}
+.fe-pet-stage .companion-canvas {
+  width: auto !important;
+  height: 100% !important;
+  max-width: 100%;
+  aspect-ratio: 1;
+}
+.fe-quest-card {
+  top: 18%;
+}
+.fe-side-orbit {
+  top: 12%;
+  gap: 12px;
+}
+.fe-chapter-note {
+  bottom: 3%;
+}
+.fe-action-dock {
+  bottom: 4%;
+}
+.battle-log:not([open]) {
+  min-height: 0;
+}
+.login-gifts {
+  margin-bottom: 24px;
+}
+.login-gifts h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.25rem;
+}
+.login-gifts p {
+  margin: 10px 0 18px;
+}
+.login-gifts ol {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 15px;
+}
+.login-gifts li {
+  padding: 12px 8px;
+  background: #e6dfd04d;
+  border: 1px solid #8b9c8c55;
+  border-radius: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+.login-gifts li small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.login-gifts li > span {
+  font-size: 1.8rem;
+}
+.login-gifts li strong {
+  font-size: 0.78rem;
+}
+.login-gifts li.collected {
+  background: #bbdcc18c;
+  border-color: #70937b;
+}
+.login-gifts li.legendary {
+  border: 2px solid #b88a42;
+  background: #f2d79555;
+}
+.wish-treasure-model.archived-portrait {
+  height: 270px;
+}
+@media (min-width: 821px) {
+  .fe-world-hub {
+    min-height: 620px;
+    height: min(740px, calc(100svh - 135px));
+    aspect-ratio: auto;
+  }
+  .fe-pet-stage {
+    top: 24%;
+    left: 30%;
+    width: 43%;
+    height: 59%;
+  }
+  .fe-quest-card {
+    min-width: 0;
+    width: 26%;
+    padding: 20px;
+  }
+  .fe-quest-card h2 {
+    font-size: 2rem;
+  }
+  .fe-quest-card > p {
+    font-size: 0.8rem;
+  }
+  .fe-orbit-icon {
+    width: 62px;
+    height: 62px;
+  }
+  .fe-action-dock {
+    min-height: 85px;
+  }
+  .fe-action-orb {
+    width: 54px;
+    height: 54px;
+  }
+  .fe-action-orb svg {
+    width: 32px;
+    height: 32px;
+  }
+}
+@media (max-width: 820px) {
+  .furever-app {
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+  .fe-world-hub {
+    min-height: 0;
+    padding-bottom: 20px;
+    gap: 12px;
+  }
+  .fe-world-title {
+    margin-top: 0;
+  }
+  .fe-world-title h1 {
+    font-size: 2rem;
+  }
+  .fe-pet-stage {
+    height: 310px;
+    min-height: 310px;
+  }
+  .fe-quest-card {
+    order: 9;
+  }
+  .fe-action-dock {
+    position: relative;
+    inset: auto;
+    order: 6;
+    width: 100%;
+  }
+  .fe-side-orbit {
+    order: 7;
+  }
+  .fe-story-link {
+    position: relative;
+    inset: auto;
+    order: 8;
+    width: 100%;
+  }
+  .login-gifts ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .login-gifts li:last-child {
+    grid-column: 1/-1;
+  }
+  .login-gifts .panel-heading {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}

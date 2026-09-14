@@ -1,5 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Pet from './Pet';
+import KittenDrop from './KittenDrop';
+import type { PetCue } from '@/lib/client/companion-motion';
 import {
   Compass,
   Lock,
@@ -169,6 +172,67 @@ export function Explore({ state: s, act, busy, navigate }: ScreenProps) {
 }
 export function Battle({ state: s, act, busy, navigate }: ScreenProps) {
   const b = s.battle;
+  const [motion, setMotion] = useState(''),
+    [cue, setCue] = useState<PetCue>(),
+    [enemyCue, setEnemyCue] = useState<PetCue>(),
+    [impact, setImpact] = useState<{
+      id: number;
+      enemy: number;
+      pet: number;
+    } | null>(null),
+    [acting, setActing] = useState(false);
+  const locked = useRef(false),
+    alive = useRef(true),
+    timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+      timers.current.forEach(clearTimeout);
+    };
+  }, []);
+  const playTurn = async (move: string) => {
+    if (!b || locked.current || busy || b.finished) return;
+    locked.current = true;
+    setActing(true);
+    setMotion(move);
+    setImpact(null);
+    setCue({
+      kind: move === 'defend' ? 'guard' : move === 'tonic' ? 'feed' : 'attack',
+      id: Date.now(),
+    });
+    const start = performance.now();
+    const result = await act(
+      move === 'tonic'
+        ? { action: 'use_item', itemId: 'potion' }
+        : { action: 'battle_action', id: b.id, move },
+    );
+    if (!alive.current) return;
+    const next = result?.state.battle;
+    if (next && next.id === b.id) {
+      setImpact({
+        id: Date.now(),
+        enemy: b.enemyHp - next.enemyHp,
+        pet: b.hp - next.hp,
+      });
+      setEnemyCue({
+        kind: next.enemyHp === 0 ? 'rest' : 'attack',
+        id: Date.now(),
+      });
+      if (next.enemyHp === 0) setCue({ kind: 'victory', id: Date.now() });
+    } else setMotion('');
+    timers.current.push(
+      setTimeout(
+        () => {
+          if (!alive.current) return;
+          locked.current = false;
+          setActing(false);
+          setMotion('');
+        },
+        Math.max(350, 1100 - (performance.now() - start)),
+      ),
+    );
+  };
   return (
     <>
       <SectionTitle
@@ -187,7 +251,18 @@ export function Battle({ state: s, act, busy, navigate }: ScreenProps) {
         </section>
       ) : (
         <>
-          <div className="battle-arena">
+          <div
+            className={`battle-arena move-${motion}`}
+            data-battle-state={
+              b.finished
+                ? b.enemyHp === 0
+                  ? 'victory'
+                  : 'ended'
+                : acting
+                  ? 'animating'
+                  : 'ready'
+            }
+          >
             <div className="fighter">
               <h3>{s.pet?.name}</h3>
               <span>
@@ -197,10 +272,29 @@ export function Battle({ state: s, act, busy, navigate }: ScreenProps) {
                 value={(b.hp / b.maxHp) * 100}
                 aria-label="Companion health"
               />
-              <img
-                src={s.pet?.appearance || '/assets/companion.webp'}
-                alt={s.pet?.name}
-              />
+              <div className="battle-creature">
+                <Pet
+                  pet={s.pet}
+                  audio={null}
+                  compact
+                  interactive={false}
+                  cue={cue}
+                />
+                {motion === 'defend' && (
+                  <div className="battle-guard" aria-label="Guarding">
+                    <Shield />
+                  </div>
+                )}
+                {impact && impact.pet !== 0 && (
+                  <span
+                    key={impact.id}
+                    className={`battle-number ${impact.pet < 0 ? 'healing' : ''}`}
+                  >
+                    {impact.pet < 0 ? '+' : '−'}
+                    {Math.abs(impact.pet)}
+                  </span>
+                )}
+              </div>
             </div>
             <span className="versus">
               VS<small>TURN {b.turn + 1}</small>
@@ -214,9 +308,40 @@ export function Battle({ state: s, act, busy, navigate }: ScreenProps) {
                 value={(b.enemyHp / b.enemyMaxHp) * 100}
                 aria-label="Enemy health"
               />
-              <div className="enemy-sigil">
-                <Swords size={85} />
-                <span>SHADOW GUARDIAN</span>
+              <div
+                className={`battle-creature guardian ${b.enemyHp === 0 ? 'defeated' : ''}`}
+              >
+                <Pet
+                  pet={
+                    s.pet
+                      ? {
+                          ...s.pet,
+                          name: b.enemy,
+                          appearance: '/assets/starlight-rig.png',
+                          appearanceFormat: 'companion-atlas-v1',
+                          equipped: [],
+                        }
+                      : null
+                  }
+                  audio={null}
+                  compact
+                  interactive={false}
+                  cue={enemyCue}
+                />
+                {impact && impact.enemy > 0 && (
+                  <span key={impact.id} className="battle-number enemy-damage">
+                    −{impact.enemy}
+                  </span>
+                )}
+                {acting && !['defend', 'tonic', 'retreat'].includes(motion) && (
+                  <div
+                    className="battle-impact"
+                    key={`${b.id}-${b.turn}`}
+                    aria-hidden="true"
+                  >
+                    <Sparkles />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -241,14 +366,13 @@ export function Battle({ state: s, act, busy, navigate }: ScreenProps) {
                     key={String(move)}
                     disabled={
                       busy ||
+                      acting ||
                       b.finished ||
                       (move === 'ultimate' && b.charge < 100) ||
                       (move === 'special' && b.charge < 40) ||
                       (move === 'ability' && b.cooldown > 0)
                     }
-                    onClick={() =>
-                      void act({ action: 'battle_action', id: b.id, move })
-                    }
+                    onClick={() => void playTurn(String(move))}
                   >
                     <I />
                     <strong>{String(label)}</strong>
@@ -257,11 +381,25 @@ export function Battle({ state: s, act, busy, navigate }: ScreenProps) {
                 );
               })}
             </div>
-            <div className="battle-log" aria-live="polite">
-              {b.log.slice(-5).map((line, i) => (
-                <p key={`${i}-${line}`}>{line}</p>
-              ))}
+            <div className="battle-result-line" role="status">
+              {b.finished
+                ? b.enemyHp === 0
+                  ? 'Victory! Your rewards are saved.'
+                  : b.hp === 0
+                    ? 'A brave effort. Rest and try again.'
+                    : 'You returned safely.'
+                : acting
+                  ? 'Your move…'
+                  : 'Choose your next move.'}
             </div>
+            <details className="battle-log">
+              <summary>Battle history</summary>
+              <div aria-live="polite">
+                {b.log.slice(-5).map((line, i) => (
+                  <p key={`${i}-${line}`}>{line}</p>
+                ))}
+              </div>
+            </details>
             {b.finished ? (
               <button className="primary" onClick={() => navigate('explore')}>
                 Return to the map
@@ -270,23 +408,15 @@ export function Battle({ state: s, act, busy, navigate }: ScreenProps) {
               <div className="row">
                 <button
                   className="secondary"
-                  disabled={busy}
-                  onClick={() =>
-                    void act({ action: 'use_item', itemId: 'potion' })
-                  }
+                  disabled={busy || acting || !s.inventory.potion}
+                  onClick={() => void playTurn('tonic')}
                 >
                   💚 Use tonic ({s.inventory.potion || 0})
                 </button>
                 <button
                   className="text-button"
-                  disabled={busy}
-                  onClick={() =>
-                    void act({
-                      action: 'battle_action',
-                      id: b.id,
-                      move: 'retreat',
-                    })
-                  }
+                  disabled={busy || acting}
+                  onClick={() => void playTurn('retreat')}
                 >
                   Retreat safely
                 </button>
@@ -298,7 +428,18 @@ export function Battle({ state: s, act, busy, navigate }: ScreenProps) {
     </>
   );
 }
-export function Minigames({ state: s, config, act, busy }: ScreenProps) {
+export function Minigames(p: ScreenProps) {
+  return (
+    <>
+      <KittenDrop {...p} />
+      <details className="grooming-alternative">
+        <summary>Grooming time</summary>
+        <GroomingGames {...p} />
+      </details>
+    </>
+  );
+}
+function GroomingGames({ state: s, config, act, busy }: ScreenProps) {
   const g = s.challenge;
   return (
     <>
@@ -358,7 +499,7 @@ export function Minigames({ state: s, config, act, busy }: ScreenProps) {
         </div>
       ) : (
         <div className="game-tiles">
-          {(['grooming', 'play'] as const).map((kind) => (
+          {(['grooming'] as const).map((kind) => (
             <section className={`game-tile ${kind}`} key={kind}>
               <span className="tile-illustration">
                 {kind === 'grooming' ? '🫧' : '🧶'}

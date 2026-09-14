@@ -41,17 +41,47 @@ export default function Home(
   }));
 
   const actions = [
-    { key: 'feed', label: 'Feed', Icon: FeedIcon, onClick: () => void care('feed') },
-    { key: 'play', label: 'Play', Icon: PlayIcon, onClick: () => void care('play') },
-    { key: 'pet', label: 'Pet', Icon: PetIcon, onClick: () => void care('pet') },
-    { key: 'train', label: 'Train', Icon: TrainIcon, onClick: () => void care('train') },
-    { key: 'explore', label: 'Explore', Icon: ExploreIcon, onClick: () => navigate('explore') },
+    {
+      key: 'feed',
+      label: 'Feed',
+      Icon: FeedIcon,
+      onClick: () => void care('feed'),
+    },
+    {
+      key: 'play',
+      label: 'Minigames',
+      Icon: PlayIcon,
+      onClick: () => navigate('minigames'),
+    },
+    {
+      key: 'pet',
+      label: 'Pet',
+      Icon: PetIcon,
+      onClick: () => void care('pet'),
+    },
+    {
+      key: 'train',
+      label: 'Train',
+      Icon: TrainIcon,
+      onClick: () => void care('train'),
+    },
+    {
+      key: 'explore',
+      label: 'Explore',
+      Icon: ExploreIcon,
+      onClick: () => navigate('explore'),
+    },
   ] as const;
 
   const sideNav = [
-    { label: 'Inventory', Icon: InventoryIcon, route: 'inventory', badge: false },
-    { label: 'Team', Icon: TeamIcon, route: 'profile', badge: false },
-    { label: 'Event', Icon: EventIcon, route: 'events', badge: true },
+    {
+      label: 'Inventory',
+      Icon: InventoryIcon,
+      route: 'inventory',
+      badge: false,
+    },
+    { label: 'My pet', Icon: TeamIcon, route: 'pet', badge: false },
+    { label: 'Login gifts', Icon: EventIcon, route: 'dailies', badge: false },
     { label: 'World Map', Icon: WorldMapIcon, route: 'explore', badge: false },
   ] as const;
 
@@ -101,13 +131,13 @@ export default function Home(
         </header>
         <div className="fe-quest-rule" />
         <div className="fe-quest-list">
-          {quests.map((quest, index) => (
+          {quests.map((quest) => (
             <button key={quest.id} onClick={() => navigate('dailies')}>
               <span className={`fe-quest-check ${quest.done ? 'done' : ''}`}>
                 {quest.done ? '✓' : ''}
               </span>
               <span>{quest.label}</span>
-              <em>{quest.done ? 'DONE' : index === 1 ? '2/3' : '0/1'}</em>
+              <em>{quest.done ? 'DONE' : '0/1'}</em>
             </button>
           ))}
         </div>
@@ -120,11 +150,8 @@ export default function Home(
 
       <section className="fe-world-title" aria-label="Whispering Meadow">
         <div className="fe-logo-lockup fe-logo-lockup-asset">
-          <img
-            className="fe-logo-image"
-            src="/assets/asset-furever/regions/logo-branding.webp"
-            alt="FurEver · A kinder world for every cat"
-          />
+          <strong className="release-wordmark">FurEver</strong>
+          <small>A KINDER WORLD FOR EVERY CAT</small>
         </div>
         <h1>
           Whispering
@@ -132,7 +159,8 @@ export default function Home(
           Meadow
         </h1>
         <p>
-          NEW PLACES <span>•</span> NEW FRIENDS <span>•</span> A BRIGHTER TOMORROW
+          NEW PLACES <span>•</span> NEW FRIENDS <span>•</span> A BRIGHTER
+          TOMORROW
         </p>
       </section>
 
@@ -154,6 +182,9 @@ export default function Home(
         <strong>Ready for another little adventure?</strong>
         <span>{pet.personality} tail flick detected ♡</span>
       </div>
+      <button className="fe-story-link" onClick={() => navigate('profile')}>
+        My story & achievements →
+      </button>
 
       <nav className="fe-side-orbit" aria-label="Game sections">
         {sideNav.map(({ label, Icon, route, badge }) => (

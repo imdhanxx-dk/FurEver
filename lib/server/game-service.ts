@@ -55,6 +55,7 @@ export async function transact(
       admin,
       config,
     });
+    result.revision = row.revision + 1;
     try {
       return await db.rpc<GameResult>('commit_game', {
         p_user: userId,
@@ -95,6 +96,15 @@ export async function createIdentity(
 }
 export function publicState(state: PlayerState) {
   const safe = structuredClone(state);
+  safe.gacha.history = safe.gacha.history.map((h) => ({
+    ...h,
+    rarity:
+      String(h.rarity) === 'Mythic'
+        ? 'Superior'
+        : String(h.rarity) === 'Rare'
+          ? 'Uncommon'
+          : h.rarity,
+  }));
   if (safe.challenge)
     safe.challenge.targets = safe.challenge.targets.map((t, i) =>
       i === safe.challenge!.step ? t : -1,

@@ -22,19 +22,6 @@ import {
   ArrowLeftRight,
   UserRound,
 } from 'lucide-react';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarInset,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
 import { Progress } from '@/components/ui/progress';
 import {
   Dialog,
@@ -70,16 +57,16 @@ const Inventory = lazy(() =>
   Dailies = lazy(() =>
     import('./Collection').then((m) => ({ default: m.Dailies })),
   ),
-  Gacha = lazy(() =>
-    import('./Collection').then((m) => ({ default: m.Gacha })),
-  ),
+  Gacha = lazy(() => import('./Wishes')),
   Events = lazy(() =>
     import('./Collection').then((m) => ({ default: m.Events })),
   ),
   Achievements = lazy(() =>
     import('./Collection').then((m) => ({ default: m.Achievements })),
   );
-const Studio = lazy(() => import('./Studio')),
+const World = lazy(() => import('./World')),
+  Story = lazy(() => import('./Story')),
+  Companions = lazy(() => import('./Companions')),
   Settings = lazy(() => import('./Settings')),
   Admin = lazy(() => import('./Admin'));
 const Mora = lazy(() =>
@@ -89,6 +76,8 @@ const Mora = lazy(() =>
     import('./Community').then((m) => ({ default: m.Support })),
   );
 type Bootstrap = {
+  betaPending?: boolean;
+  revision?: number;
   authenticated: boolean;
   setupRequired?: boolean;
   user?: {
@@ -97,6 +86,7 @@ type Bootstrap = {
     username: string;
     discord_avatar: string | null;
     admin: boolean;
+    discord_id?: string;
   };
   state?: PlayerState;
   csrf?: string;
@@ -104,7 +94,8 @@ type Bootstrap = {
   capabilities?: { ai: boolean; payments: boolean };
 };
 const NAV = [
-  ['home', 'Sanctuary', HomeIcon],
+  ['home', 'Home', HomeIcon],
+  ['pet', 'My companions', PawPrint],
   ['explore', 'Explore', Compass],
   ['minigames', 'Play together', Gamepad2],
   ['battle', 'Battle', Swords],
@@ -113,8 +104,6 @@ const NAV = [
   ['shop', 'Trading post', ShoppingBag],
   ['gacha', 'Moonwell', Sparkles],
   ['events', 'Seasonal stories', Heart],
-  ['create-pet', 'Creative studio', Palette],
-  ['fusion-lab', 'Fusion Lab', Sparkles],
   ['profile', 'My story', UserRound],
   ['mora', 'Mora exchange', ArrowLeftRight],
   ['support', 'Contact the club', Mail],
@@ -122,7 +111,7 @@ const NAV = [
 function Loading({ path = 'home' }: { path?: string }) {
   return (
     <div className={`game-loading loading-${path}`} role="status">
-      <img src="/assets/companion.webp" alt="" />
+      <PawPrint size={40} />
       <div className="loading-trail">· · ✧ · ·</div>
       <p>
         {path === 'battle'
@@ -148,7 +137,10 @@ export default function Game() {
     [online, setOnline] = useState(true),
     [tutorial, setTutorial] = useState(-1),
     [setupDialog, setSetupDialog] = useState(false),
-    [levelUp, setLevelUp] = useState<number | null>(null);
+    [levelUp, setLevelUp] = useState<{ amount: number; id: number } | null>(
+      null,
+    ),
+    [mainMenu, setMainMenu] = useState(false);
   const audio = useRef<GameAudio | null>(null),
     inFlight = useRef(false),
     noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
@@ -167,7 +159,14 @@ export default function Game() {
           'The game service is temporarily unavailable. Please reload FurEver.',
         );
       csrfRef.current = b.csrf || '';
-      setData(b);
+      setData((current) =>
+        current?.authenticated &&
+        b.authenticated &&
+        current.user?.id === b.user?.id &&
+        (current.revision ?? -1) > (b.revision ?? -1)
+          ? current
+          : b,
+      );
       setError('');
     } catch (e) {
       setError(
@@ -224,6 +223,7 @@ export default function Game() {
   const navigate = (next: string) => {
     window.history.pushState({}, '', `/${next}`);
     setPath(next);
+    setMainMenu(false);
     window.scrollTo({ top: 0, behavior: 'instant' });
     audio.current?.start();
   };
@@ -246,11 +246,17 @@ export default function Game() {
           };
     let response: Response;
     try {
-      response = await fetch(`/api/${endpoint}`, options);
+      response = await fetch(`/api/${endpoint}`, {
+        ...options,
+        signal: AbortSignal.timeout(20000),
+      });
     } catch {
       if (payload === undefined)
         throw new Error('You’re offline. Reconnect to continue.');
-      response = await fetch(`/api/${endpoint}`, options);
+      response = await fetch(`/api/${endpoint}`, {
+        ...options,
+        signal: AbortSignal.timeout(20000),
+      });
     }
     return readApiResponse<Record<string, unknown>>(response);
   };
@@ -263,13 +269,30 @@ export default function Game() {
       const result = (await request('action', intent)) as unknown as GameResult;
       const before = progress(data?.state?.xp || 0).level,
         after = progress(result.state.xp).level;
-      setData((d) => (d ? { ...d, state: result.state } : d));
-      notify(result.message);
-      audio.current?.react(
-        intent.action === 'boundary' ? 'defensive' : 'happy',
-        result.state.pet?.species,
+      setData((d) =>
+        d && (result.revision ?? -1) >= (d.revision ?? -1)
+          ? { ...d, state: result.state, revision: result.revision }
+          : d,
       );
-      if (after > before) setLevelUp(after);
+      if (
+        ![
+          'world_sync',
+          'battle_action',
+          'battle_start',
+          'use_item',
+          'kitten_drop',
+          'kitten_start',
+          'minigame_hit',
+        ].includes(intent.action)
+      )
+        notify(result.message);
+      if (intent.action !== 'world_sync')
+        audio.current?.react(
+          intent.action === 'boundary' ? 'defensive' : 'happy',
+          result.state.pet?.species,
+        );
+      if (after > before)
+        setLevelUp({ amount: after - before, id: Date.now() });
       if (intent.action === 'create_pet') {
         navigate('home');
         if (!localStorage.getItem('furever.tutorial')) setTutorial(0);
@@ -326,6 +349,27 @@ export default function Game() {
         </Dialog>
       </>
     );
+  if (data.betaPending)
+    return (
+      <div className="beta-waiting">
+        <PawPrint size={48} />
+        <h1>Your invitation is waiting</h1>
+        <p>FurEver beta is open to players approved by the game owner.</p>
+        <p>
+          Signed in as <strong>{data.user?.display_name}</strong>
+        </p>
+        <p>
+          Your Discord ID: <strong>{data.user?.discord_id}</strong>
+        </p>
+        <p>Ask the owner to approve this account, then check again.</p>
+        <button className="primary" onClick={() => void refresh()}>
+          Check my access
+        </button>
+        <button className="text-button" onClick={() => void logout()}>
+          Use another Discord account
+        </button>
+      </div>
+    );
   const state = data.state!,
     config = data.config!,
     user = data.user!,
@@ -347,7 +391,21 @@ export default function Game() {
   else
     switch (path) {
       case 'home':
+        content = (
+          <Home
+            {...screen}
+            audio={audio.current}
+            playerName={user.display_name}
+          />
+        );
+        break;
+      case 'world':
+        content = <World {...screen} />;
+        break;
       case 'pet':
+        content = <Companions {...screen} />;
+        break;
+      case 'sanctuary':
         content = <Home {...screen} audio={audio.current} />;
         break;
       case 'explore':
@@ -377,10 +435,9 @@ export default function Game() {
       case 'create-avatar':
       case 'create-pet':
       case 'fusion-lab':
-        content = (
-          <Studio key={path} {...screen} csrf={data.csrf!} refresh={refresh} />
-        );
+        content = <Companions {...screen} />;
         break;
+      case 'story':
       case 'profile':
         content = (
           <>
@@ -395,15 +452,9 @@ export default function Game() {
                   @{user.username} · Level {xp.level} · {state.stats.battles}{' '}
                   victories
                 </p>
-                <button
-                  className="text-button"
-                  onClick={() => navigate('create-avatar')}
-                >
-                  Create your game avatar ↗
-                </button>
               </div>
             </div>
-            <Achievements {...screen} />
+            <Story {...screen} />
           </>
         );
         break;
@@ -431,9 +482,13 @@ export default function Game() {
     [
       'Meet your companion',
       'Tap their head or swipe gently to say hello.',
-      'home',
+      'pet',
     ],
-    ['A little nourishment', 'Feed a harvest bowl from the care bar.', 'home'],
+    [
+      'A little nourishment',
+      'Feed a harvest bowl from the care bar.',
+      'sanctuary',
+    ],
     [
       'Make time for play',
       'Try grooming or catch a little starlight.',
@@ -446,87 +501,27 @@ export default function Game() {
     ],
     [
       'The world is waiting',
-      'Explore, earn EXP, and grow together. Fusion opens at level 10.',
-      'explore',
+      'Walk into the meadow and meet Edda to begin the first chapter.',
+      'home',
     ],
   ];
   return (
-    <SidebarProvider
-      className={`furever-app detail-${prefs.graphics.toLowerCase()}`}
+    <div
+      className={`furever-app detail-${prefs.graphics.toLowerCase()} ${path === 'world' ? 'in-world' : ''}`}
     >
       <a className="skip-link" href="#game-content">
         Skip to game
       </a>
-      <Sidebar className="game-sidebar">
-        <SidebarHeader>
-          <a
-            className="brand"
-            href="/home"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('home');
-            }}
-          >
-            <PawPrint />
-            {config.name}
-          </a>
-          <span className="sidebar-subtitle">COMPANIONS & ADVENTURES</span>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarMenu>
-              {NAV.map(([route, label, Icon]) => (
-                <SidebarMenuItem key={route}>
-                  <SidebarMenuButton
-                    isActive={path === route}
-                    onClick={() => navigate(route)}
-                    className="game-nav"
-                  >
-                    <Icon />
-                    <span>{label}</span>
-                    {route === 'events' && <span className="nav-dot" />}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              {user.admin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    className="game-nav"
-                    isActive={path.startsWith('admin')}
-                    onClick={() => navigate('admin')}
-                  >
-                    <Shield />
-                    <span>Club administration</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-            </SidebarMenu>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter>
-          <SidebarMenuButton
-            className="game-nav"
-            onClick={() => navigate('settings')}
-          >
-            <SettingsIcon />
-            Settings
-          </SidebarMenuButton>
-          <div className="sidebar-player">
-            <img
-              src={state.avatar || user.discord_avatar || '/icon.svg'}
-              alt=""
-            />
-            <div>
-              <strong>{user.display_name}</strong>
-              <small>A friend of the sanctuary</small>
-            </div>
-          </div>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset className="game-inset">
+      <div className="game-inset">
         <header className="topbar">
           <div className="row">
-            <SidebarTrigger className="mobile-menu" />
+            <button
+              className="icon-button main-menu-button"
+              aria-label="Main menu"
+              onClick={() => setMainMenu(true)}
+            >
+              <Menu />
+            </button>
             <span className="breadcrumb">
               Your adventure <span>/</span>{' '}
               <strong>
@@ -536,7 +531,20 @@ export default function Game() {
           </div>
           <div className="hud">
             <div className="xp-hud">
-              <span>LV. {xp.level}</span>
+              <span className="level-label">
+                LV. {xp.level}
+                {levelUp && (
+                  <b
+                    key={levelUp.id}
+                    className="level-gain"
+                    role="status"
+                    aria-label={`Gained ${levelUp.amount} levels`}
+                    onAnimationEnd={() => setLevelUp(null)}
+                  >
+                    +{levelUp.amount}
+                  </b>
+                )}
+              </span>
               <div>
                 <small>
                   {xp.level === 100
@@ -589,7 +597,7 @@ export default function Game() {
             );
           })}
         </nav>
-      </SidebarInset>
+      </div>
       {notice && (
         <div className="game-toast" role="status">
           <PawPrint size={19} />
@@ -639,23 +647,34 @@ export default function Game() {
           </button>
         </DialogContent>
       </Dialog>
-      <Dialog
-        open={levelUp !== null}
-        onOpenChange={(v) => !v && setLevelUp(null)}
-      >
-        <DialogContent className="game-dialog level-dialog">
-          <Sparkles size={50} />
-          <DialogTitle>
-            {levelUp === 100 ? 'FurEver friends.' : 'Look how you’ve grown.'}
-          </DialogTitle>
-          <DialogDescription>
-            Level {levelUp}. Another page in your story together.
-          </DialogDescription>
-          <button className="primary" onClick={() => setLevelUp(null)}>
-            Keep growing ♡
-          </button>
+      <Dialog open={mainMenu} onOpenChange={setMainMenu}>
+        <DialogContent className="game-dialog main-menu-dialog">
+          <DialogTitle>FurEver</DialogTitle>
+          <DialogDescription>Where shall we go?</DialogDescription>
+          <nav className="main-menu-grid" aria-label="Game destinations">
+            {NAV.map(([route, label, Icon]) => (
+              <button
+                key={route}
+                aria-current={path === route ? 'page' : undefined}
+                onClick={() => navigate(route)}
+              >
+                <Icon size={22} />
+                <span>{label}</span>
+              </button>
+            ))}
+            <button onClick={() => navigate('settings')}>
+              <SettingsIcon size={22} />
+              <span>Settings</span>
+            </button>
+            {user.admin && (
+              <button onClick={() => navigate('admin')}>
+                <Shield size={22} />
+                <span>Club administration</span>
+              </button>
+            )}
+          </nav>
         </DialogContent>
       </Dialog>
-    </SidebarProvider>
+    </div>
   );
 }

@@ -8,5 +8,5 @@
     ".next-vercel/types/**/*.ts",
     ".next-vercel/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", ".next", ".vinext", "dist"]
+  "exclude": ["node_modules", "outputs", "work", ".next", ".vinext", "dist", "vite.config.ts"]
 }

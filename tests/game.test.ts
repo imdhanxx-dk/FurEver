@@ -198,7 +198,7 @@ test('minigame enforces nonce, sequence, timing, one-time reward and daily cap',
     /complete/,
   );
 });
-test('gacha honors every pity tier and accepts gameplay tickets only', () => {
+test('gacha honors every pity tier and deducts earned tickets', () => {
   let s = starter();
   s.inventory.ticket = 100;
   for (let i = 0; i < 100; i++) {
@@ -206,8 +206,8 @@ test('gacha honors every pity tier and accepts gameplay tickets only', () => {
     s = r.state;
     if ((i + 1) % 10 === 0) assert.notEqual(r.rewards![0].rarity, 'Common');
     if ((i + 1) % 50 === 0)
-      assert.ok(['Legendary', 'Mythic'].includes(r.rewards![0].rarity));
-    if (i === 99) assert.equal(r.rewards![0].rarity, 'Mythic');
+      assert.ok(['Legendary', 'Superior'].includes(r.rewards![0].rarity));
+    if (i === 99) assert.equal(r.rewards![0].rarity, 'Superior');
   }
   assert.equal(s.inventory.ticket, 0);
   assert.throws(() => run(s, { action: 'gacha', count: 1 }), /need more/);
@@ -216,6 +216,7 @@ test('avatar and fusion generation enforce five reservations server-side', () =>
   for (const kind of ['avatar', 'fusion']) {
     let s = starter();
     s.xp = xpForLevel(10);
+    s.inventory.fusion_token = 1; // Legacy saved sessions remain readable; public creation is disabled.
     s = run(s, { action: 'generation_open', kind }).state;
     const id = s.generations[0].id;
     for (let i = 0; i < 5; i++) {
@@ -324,7 +325,7 @@ test('companion switching preserves progress and only uses built-ins or selected
     context(),
   ).state;
   assert.equal(s.pet!.appearance, '/assets/starlight-rig.png');
-  assert.equal(s.pet!.name, before.pet!.name);
+  assert.equal(s.pet!.name, 'Starlight');
   assert.equal(s.pet!.bond, before.pet!.bond);
   assert.equal(s.coins, before.coins);
   assert.equal(s.xp, before.xp);
@@ -344,6 +345,7 @@ test('companion switching preserves progress and only uses built-ins or selected
     context(),
   ).state;
   assert.equal(s.pet!.appearance, '/assets/companion-rig.png');
+  assert.equal(s.pet!.name, before.pet!.name);
 });
 
 test('older portraits stay readable and are not treated as animation atlases', () => {

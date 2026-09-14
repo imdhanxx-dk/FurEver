@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readApiResponse } from '../lib/client/api';
 import { configured, databaseHeaders, studioEnabled } from '../lib/server/env';
 
-test('paid image creation requires both a key and an explicit enabled flag', () => {
+test('creative studio stays disabled even with legacy API credentials', () => {
   assert.equal(studioEnabled({}), false);
   assert.equal(studioEnabled({ AI_PROVIDER_API_KEY: 'test-only' }), false);
   assert.equal(studioEnabled({ AI_STUDIO_ENABLED: 'true' }), false);
@@ -19,7 +19,7 @@ test('paid image creation requires both a key and an explicit enabled flag', () 
       AI_PROVIDER_API_KEY: 'test-only',
       AI_STUDIO_ENABLED: 'true',
     }),
-    true,
+    false,
   );
 });
 

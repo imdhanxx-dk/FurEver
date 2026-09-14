@@ -20,6 +20,8 @@ export default function Admin({ request, notify }: ScreenProps) {
     [currency, setCurrency] = useState('PC'),
     [amount, setAmount] = useState('100'),
     [item, setItem] = useState('food');
+  const [betaId, setBetaId] = useState(''),
+    [savingBeta, setSavingBeta] = useState(false);
   const load = async () => {
     try {
       const r = await request(
@@ -62,6 +64,7 @@ export default function Admin({ request, notify }: ScreenProps) {
       <Tabs value={section} onValueChange={(v) => setSection(String(v))}>
         <TabsList className="category-tabs">
           {[
+            'beta',
             'players',
             'economy',
             'mora',
@@ -76,7 +79,86 @@ export default function Admin({ request, notify }: ScreenProps) {
           ))}
         </TabsList>
       </Tabs>
-      {section === 'configuration' ? (
+      {section === 'beta' ? (
+        <section className="panel beta-access-panel">
+          <h3>Beta invitations</h3>
+          <p>
+            Only you and the Discord accounts you approve can enter. Removing
+            access also blocks their existing sessions.
+          </p>
+          <form
+            className="row"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (savingBeta) return;
+              setSavingBeta(true);
+              try {
+                await mutate({
+                  action: 'beta_access',
+                  discordId: betaId.trim(),
+                  approved: true,
+                });
+                setBetaId('');
+              } finally {
+                setSavingBeta(false);
+              }
+            }}
+          >
+            <label className="field">
+              Discord user ID
+              <input
+                required
+                inputMode="numeric"
+                pattern="[0-9]{17,20}"
+                maxLength={20}
+                value={betaId}
+                onChange={(e) => setBetaId(e.target.value)}
+                placeholder="Discord user ID"
+              />
+            </label>
+            <button className="primary" disabled={savingBeta}>
+              Approve player
+            </button>
+          </form>
+          <h3>Player access</h3>
+          <div className="beta-player-list">
+            {rows.length ? (
+              rows.map((r) => (
+                <div className="beta-player" key={String(r.discord_id)}>
+                  <div>
+                    <strong>{String(r.display_name)}</strong>
+                    <small>{String(r.discord_id)}</small>
+                    <span>{r.approved ? 'Approved' : 'Awaiting approval'}</span>
+                  </div>
+                  <button
+                    className={r.approved ? 'secondary' : 'primary'}
+                    disabled={savingBeta}
+                    onClick={async () => {
+                      setSavingBeta(true);
+                      try {
+                        await mutate({
+                          action: 'beta_access',
+                          discordId: r.discord_id,
+                          approved: !r.approved,
+                        });
+                      } finally {
+                        setSavingBeta(false);
+                      }
+                    }}
+                  >
+                    {r.approved ? 'Revoke access' : 'Approve'}
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p>
+                No players have signed in yet. You can approve their Discord ID
+                above in advance.
+              </p>
+            )}
+          </div>
+        </section>
+      ) : section === 'configuration' ? (
         <section className="panel form-stack">
           <h3>Events, Mora exchange, shop & gacha</h3>
           <p className="muted">

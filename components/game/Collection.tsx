@@ -1,4 +1,5 @@
 'use client';
+import LoginGifts from './LoginGifts';
 import { useState } from 'react';
 import { Search, Package, Gift, Sparkles, Check, Heart } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,6 +27,7 @@ export function Inventory({
     [selected, setSelected] = useState<Item | null>(null);
   let items = ITEMS.filter(
     (i) =>
+      i.id !== 'fusion_token' &&
       (shop ? config.prices[i.id] > 0 : (s.inventory[i.id] ?? 0) > 0) &&
       (category === 'All' || i.category === category) &&
       i.name.toLowerCase().includes(query.toLowerCase()),
@@ -209,6 +211,7 @@ export function Dailies({
         title="Your daily adventures."
         description="A fresh set of moments, every day at midnight UTC."
       />
+      <LoginGifts state={s} />
       <div className="daily-layout">
         <section className="panel daily-list">
           {DAILY_TASKS.map(([id, label], i) => (
@@ -257,127 +260,6 @@ export function Dailies({
           </button>
         </section>
       </div>
-    </>
-  );
-}
-export function Gacha({ state: s, config, act, busy }: ScreenProps) {
-  const [reveals, setReveals] = useState<{ item: string; rarity: string }[]>(
-    [],
-  );
-  return (
-    <>
-      <SectionTitle
-        eyebrow="A WISH, A WONDER"
-        title="The Moonwell."
-        description="Cast a wish into the quiet. See what finds its way back to you."
-      />
-      <div className="gacha-layout">
-        <section className="moonwell panel">
-          <div className="wish-orbit">
-            <Sparkles size={70} />
-          </div>
-          <span className="eyebrow">FEATURED MYTHIC KEEPSAKE</span>
-          <h2>Celestial familiar</h2>
-          <p>A little starlight to carry on every adventure.</p>
-          <div className="row">
-            <button
-              className="primary"
-              disabled={busy || (s.inventory.ticket ?? 0) < 1}
-              onClick={async () => {
-                const r = await act({ action: 'gacha', count: 1 });
-                if (r?.rewards) setReveals(r.rewards);
-              }}
-            >
-              Make a wish · 1 🎟️
-            </button>
-            <button
-              className="secondary"
-              disabled={busy || (s.inventory.ticket ?? 0) < 10}
-              onClick={async () => {
-                const r = await act({ action: 'gacha', count: 10 });
-                if (r?.rewards) setReveals(r.rewards);
-              }}
-            >
-              Ten wishes · 10 🎟️
-            </button>
-          </div>
-          <small>
-            {s.inventory.ticket ?? 0} wish tickets · Earned through adventures
-          </small>
-        </section>
-        <aside className="panel">
-          <h3>A promise in every wish</h3>
-          {(['epic', 'legendary', 'mythic'] as const).map((r) => (
-            <div className="pity-row" key={r}>
-              <span>
-                {r} guaranteed within {config.pity[r] - s.gacha[r]} wishes
-              </span>
-              <Progress
-                value={(s.gacha[r] / config.pity[r]) * 100}
-                aria-label={`${r} pity progress`}
-              />
-            </div>
-          ))}
-          <h3>Every possibility, openly shared</h3>
-          {['Common', 'Rare', 'Epic', 'Legendary', 'Mythic'].map((r, i) => (
-            <div className="odds-row" key={r}>
-              <span>{r}</span>
-              <strong>{config.gachaWeights[i]}%</strong>
-            </div>
-          ))}
-          <small>
-            Guarantees take priority. Duplicate keepsakes become 40–200 PC.
-            Spending never changes the odds.
-          </small>
-        </aside>
-      </div>
-      <section className="panel wish-history">
-        <h3>Your recent wishes</h3>
-        {s.gacha.history.slice(0, 10).map((h) => (
-          <div className="history-row" key={h.id}>
-            <span>
-              {ITEMS.find((i) => i.id === h.item)?.icon}{' '}
-              {ITEMS.find((i) => i.id === h.item)?.name}
-            </span>
-            <small>
-              {h.rarity} · {new Date(h.time).toLocaleDateString()}
-            </small>
-          </div>
-        ))}
-        {!s.gacha.history.length && (
-          <p className="muted">
-            The first page of your wish journal is waiting.
-          </p>
-        )}
-      </section>
-      <Dialog
-        open={reveals.length > 0}
-        onOpenChange={(v) => !v && setReveals([])}
-      >
-        <DialogContent className="game-dialog reveal-dialog">
-          <DialogTitle>The Moonwell heard you.</DialogTitle>
-          <DialogDescription>
-            Your wishes have become keepsakes.
-          </DialogDescription>
-          <div className="reveal-grid">
-            {reveals.map((r, i) => (
-              <div
-                className={`reveal rarity-${r.rarity.toLowerCase()}`}
-                key={i}
-              >
-                <span className="item-icon">
-                  {ITEMS.find((x) => x.id === r.item)?.icon}
-                </span>
-                <strong>{ITEMS.find((x) => x.id === r.item)?.name}</strong>
-                <small>{r.rarity}</small>
-              </div>
-            ))}
-          </div>
-          <button className="primary" onClick={() => setReveals([])}>
-            Keep the magic
-          </button>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

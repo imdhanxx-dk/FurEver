@@ -8,10 +8,7 @@ export default function Entry() {
       <div className="entry-scene" />
       <header className="entry-header">
         <a className="brand asset-brand" href="/" aria-label="FurEver home">
-          <img
-            src="/assets/asset-furever/regions/logo-branding.webp"
-            alt="FurEver · A kinder world for every cat"
-          />
+          <PawPrint aria-hidden="true" /><strong className="release-wordmark">FurEver</strong>
         </a>
         <span className="pill">✦ A world to call home</span>
       </header>
@@ -37,10 +34,10 @@ export default function Entry() {
             <Heart /> Care & connect
           </span>
           <span>
-            <Compass /> Explore ten worlds
+            <Compass /> Explore magical places
           </span>
           <span>
-            <Sparkles /> Create your companion
+            <Sparkles /> Name your companion
           </span>
         </div>
 

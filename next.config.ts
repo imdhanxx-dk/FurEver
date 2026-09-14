@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 import path from 'node:path';
 
 const nextConfig: NextConfig = {
-  distDir: '.next-vercel',
+  distDir: process.env.VERCEL ? '.next' : '.next-vercel',
   typescript: { tsconfigPath: 'tsconfig.next.json' },
   webpack(config, { webpack }) {
     config.plugins.push(
@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'same-origin' },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(self), geolocation=()',
+            value: 'camera=(), microphone=(), geolocation=()',
           },
           {
             key: 'Content-Security-Policy',
