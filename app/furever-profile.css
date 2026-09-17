@@ -4,7 +4,7 @@
   background:
     radial-gradient(circle at 20% 8%, rgba(235,177,93,.11), transparent 28%),
     linear-gradient(rgba(17,24,22,.92), rgba(20,25,23,.96)),
-    url('/assets/sanctuary-room.png') center / cover fixed !important;
+    url('/assets/sanctuary-room.webp') center / cover fixed !important;
 }
 
 .furever-app:has(.profile-card) .topbar {

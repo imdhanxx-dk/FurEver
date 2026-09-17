@@ -301,7 +301,7 @@ textarea {
   border-radius: 28px;
   background:
     linear-gradient(0deg, #573d191c, transparent 40%),
-    url('/assets/sanctuary-room.png') center 48%/cover;
+    url('/assets/sanctuary-room.webp') center 48%/cover;
   box-shadow:
     0 7px 0 #d9c4a0,
     inset 0 0 0 4px #fff3;

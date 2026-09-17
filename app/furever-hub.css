@@ -42,7 +42,7 @@
   color: var(--fe-ivory);
   background:
     linear-gradient(180deg, rgba(19, 34, 30, 0.08), rgba(24, 27, 24, 0.28)),
-    url('/assets/sanctuary-room.png') center 52% / cover no-repeat;
+    url('/assets/sanctuary-room.webp') center 52% / cover no-repeat;
   font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
 }
 

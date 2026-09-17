@@ -18,7 +18,7 @@
   background:
     radial-gradient(circle at 70% 5%, rgba(247, 198, 118, .13), transparent 30%),
     linear-gradient(rgba(17, 25, 22, .90), rgba(17, 24, 21, .94)),
-    url('/assets/sanctuary-room.png') center / cover fixed !important;
+    url('/assets/sanctuary-room.webp') center / cover fixed !important;
 }
 
 .furever-app:has(.inventory-grid) .game-sidebar [data-slot='sidebar-inner'],

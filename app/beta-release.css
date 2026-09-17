@@ -1,5 +1,5 @@
 /* Keep the approved illustrated game in a contained, responsive play area. */
-.fe-world-hub { background: linear-gradient(#13251b0a,#13251b30),url('/assets/meadow-world.png') center/cover; }
+.fe-world-hub { background: linear-gradient(#13251b0a,#13251b30),url('/assets/meadow-world.webp') center/cover; }
 .release-wordmark { font-family: 'Trebuchet MS',system-ui,sans-serif; font-size:2.2rem;letter-spacing:-.08em;font-weight:900; }
 .asset-brand { gap:10px; }
 .fe-world-title { color:#403236; }
