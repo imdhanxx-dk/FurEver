@@ -20,6 +20,20 @@ export function constantEqual(a: string, b: string) {
     diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
   return diff === 0;
 }
+// Vercel and Cloudflare expose the caller's address under different names, and
+// reading only one host's header silently degrades to no address at all on the
+// other. `x-forwarded-for` is a client-to-edge chain, so only the left-most
+// entry is the original caller. Null means no per-caller key is derivable, and
+// it is the caller's job to decide what limit still applies.
+export function clientAddress(request: Request) {
+  const direct =
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-vercel-forwarded-for') ||
+    request.headers.get('x-real-ip');
+  if (direct?.trim()) return direct.trim();
+  const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0];
+  return forwarded?.trim() || null;
+}
 export const cookieValue = (request: Request, name: string) =>
   request.headers
     .get('cookie')
@@ -161,7 +175,28 @@ export function secureResponse(data: unknown, status = 200) {
     },
   });
 }
-export function errorResponse(e: unknown) {
+// Players still receive a sanitised message; the operator needs the real cause.
+// Only server-side failures are reported, so ordinary validation and rate-limit
+// rejections do not bury genuine faults. Never include the request body, cookies
+// or configuration here.
+export function reportFailure(e: unknown, context: string) {
+  const expected = e instanceof GameError;
+  const status = expected ? e.status : 500;
+  // Client errors are ordinary traffic; reporting them would bury real faults.
+  if (status < 500) return;
+  // A GameError is a deliberate, already-diagnosed condition, so its message is
+  // the whole story. Only an unplanned throw needs a stack to be actionable.
+  if (expected) {
+    console.error(`[furever] ${context} failed (${status}) ${e.message}`);
+    return;
+  }
+  console.error(
+    `[furever] ${context} failed unexpectedly`,
+    e instanceof Error ? (e.stack ?? `${e.name}: ${e.message}`) : String(e),
+  );
+}
+export function errorResponse(e: unknown, context = 'request') {
+  reportFailure(e, context);
   if (e instanceof GameError)
     return secureResponse({ error: e.message, code: e.code }, e.status);
   return secureResponse(

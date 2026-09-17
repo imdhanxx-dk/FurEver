@@ -274,6 +274,9 @@ export async function handle(request: Request) {
       error.status === 401
     )
       return secureResponse({ authenticated: false, setupRequired: false });
-    return errorResponse(error);
+    return errorResponse(
+      error,
+      `${request.method} ${new URL(request.url).pathname}`,
+    );
   }
 }

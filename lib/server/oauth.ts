@@ -7,6 +7,7 @@ import {
   token,
   rateLimit,
   assertOrigin,
+  clientAddress,
   session,
   assertCsrf,
   secureResponse,
@@ -19,10 +20,15 @@ export async function login(request: Request, env: Env) {
   if (!configured(env))
     return Response.redirect(`${origin}/?notice=setup`, 302);
   const db = new Database(env);
+  // Keyed per caller. A missing address previously collapsed every caller into
+  // one bucket, which both removed the per-caller limit and let anyone lock out
+  // sign-in for everyone else. Unknown addresses still share a bucket, but with
+  // a ceiling high enough that ordinary traffic cannot trip it.
+  const address = clientAddress(request);
   await rateLimit(
     db,
-    `oauth:${await hash(request.headers.get('cf-connecting-ip') || request.headers.get('x-real-ip') || 'shared')}`,
-    20,
+    `oauth:${await hash(address ?? 'unknown-address')}`,
+    address ? 20 : 500,
     300,
   );
   const state = token();
