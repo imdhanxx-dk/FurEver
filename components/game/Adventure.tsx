@@ -36,12 +36,11 @@ export function Explore({ state: s, act, busy, navigate, notify }: ScreenProps) 
     ? WORLD_OBJECTS.find((o) => o.id === selected)
     : null;
 
-  const available = WORLD_OBJECTS.filter(
-    (o) => o.stage <= stage && (scene === 'meadow' || o.kind === 'shard' || o.kind === 'tone' || o.kind === 'challenge'),
-  ).filter((o) => {
-    if (o.kind === 'shard' && scene !== 'grove') return false;
-    if ((o.kind === 'tone' || o.kind === 'challenge') && scene !== 'echo') return false;
+  const available = WORLD_OBJECTS.filter((o) => o.stage <= stage).filter((o) => {
+    if (scene === 'grove' && !['npc', 'shard', 'story'].includes(o.kind)) return false;
+    if (scene === 'echo' && !['tone', 'challenge'].includes(o.kind)) return false;
     if (scene === 'meadow' && ['shard', 'tone', 'challenge'].includes(o.kind)) return false;
+    if (scene === 'meadow' && o.id === 'vale') return false;
     return true;
   });
 
