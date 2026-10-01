@@ -52,7 +52,7 @@ export function Explore({ state: s, act, busy, navigate, notify }: ScreenProps) 
       eyebrow: 'WHERE THE MEADOW REMEMBERS',
       description: 'Old glass catches the light beneath the roots. The western path disappears into moss.',
       minX: -34,
-      maxX: 8,
+      maxX: 20,
       minZ: -32,
       maxZ: 8,
       filter: (kind: string) => ['npc', 'shard', 'secret', 'story'].includes(kind),
@@ -228,12 +228,6 @@ export function Explore({ state: s, act, busy, navigate, notify }: ScreenProps) 
           <button className="scene-exit scene-exit-right" onClick={() => moveScene(scenes.next!)}>
             <span>›</span>
             <small>{scenes.nextLabel}</small>
-          </button>
-        )}
-
-        {scene === 'meadow' && (
-          <button className="scene-exit scene-exit-bottom" onClick={() => moveScene('meadow')} aria-label="Follow the meadow path">
-            <span>Follow the path</span>
           </button>
         )}
 
