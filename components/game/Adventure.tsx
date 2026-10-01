@@ -28,167 +28,237 @@ import { SectionTitle, type ScreenProps } from './shared';
 export function Explore({ state: s, act, busy, navigate, notify }: ScreenProps) {
   const world = s.world;
   const stage = world?.stage ?? 0;
-  const [selected, setSelected] = useState<string | null>(null);
   const [scene, setScene] = useState<'meadow' | 'grove' | 'echo'>(
     stage >= 4 ? 'echo' : stage >= 2 ? 'grove' : 'meadow',
   );
-  const selectedObject = selected
-    ? WORLD_OBJECTS.find((o) => o.id === selected)
-    : null;
+  const [selected, setSelected] = useState<string | null>(null);
+  const [dialogue, setDialogue] = useState<string | null>(null);
 
-  const available = WORLD_OBJECTS.filter((o) => o.stage <= stage).filter((o) => {
-    if (scene === 'grove' && !['npc', 'shard', 'story'].includes(o.kind)) return false;
-    if (scene === 'echo' && !['tone', 'challenge'].includes(o.kind)) return false;
-    if (scene === 'meadow' && ['shard', 'tone', 'challenge'].includes(o.kind)) return false;
-    if (scene === 'meadow' && o.id === 'vale') return false;
-    return true;
-  });
-
-  const sceneCopy = {
+  const scenes = {
     meadow: {
       title: 'Whispering Meadow',
-      eyebrow: 'SCENE 01 · THE LISTENING TOWN',
+      eyebrow: 'THE LISTENING TOWN',
       description: CHAPTERS[stage].detail,
+      minX: -34,
+      maxX: 34,
+      minZ: -14,
+      maxZ: 34,
+      filter: (kind: string) => !['shard', 'tone', 'challenge', 'story'].includes(kind),
+      next: stage >= 2 ? 'grove' as const : null,
+      nextLabel: 'Follow the roots',
     },
     grove: {
       title: 'Memory Grove',
-      eyebrow: 'SCENE 02 · WHERE THE MEADOW REMEMBERS',
-      description: 'Old glass catches the light beneath the roots. Three fragments are waiting.',
+      eyebrow: 'WHERE THE MEADOW REMEMBERS',
+      description: 'Old glass catches the light beneath the roots. The western path disappears into moss.',
+      minX: -34,
+      maxX: 8,
+      minZ: -32,
+      maxZ: 8,
+      filter: (kind: string) => ['npc', 'shard', 'secret', 'story'].includes(kind),
+      next: stage >= 4 ? 'echo' as const : null,
+      nextLabel: 'Follow the echo',
     },
     echo: {
       title: 'Echo Garden',
-      eyebrow: 'SCENE 03 · THE TANGLED ECHO',
-      description: 'The air is quiet here. Listen for the three tones and answer them in time.',
+      eyebrow: 'THE TANGLED ECHO',
+      description: 'The air is quiet here. Three tones are hidden around the garden.',
+      minX: -12,
+      maxX: 20,
+      minZ: -32,
+      maxZ: -12,
+      filter: (kind: string) => ['tone', 'challenge', 'story'].includes(kind),
+      next: null,
+      nextLabel: '',
     },
   }[scene];
 
-  const interact = async (objectId: string) => {
-    const object = WORLD_OBJECTS.find((o) => o.id === objectId);
-    if (!object || busy) return;
-    const position = world?.position || [0, 16];
+  const sceneObjects = WORLD_OBJECTS.filter(
+    (object) =>
+      object.stage <= stage &&
+      scenes.filter(object.kind) &&
+      object.x >= scenes.minX &&
+      object.x <= scenes.maxX &&
+      object.z >= scenes.minZ &&
+      object.z <= scenes.maxZ,
+  );
+
+  const place = (x: number, z: number) => ({
+    left: `${((x - scenes.minX) / (scenes.maxX - scenes.minX)) * 100}%`,
+    top: `${((scenes.maxZ - z) / (scenes.maxZ - scenes.minZ)) * 100}%`,
+  });
+
+  const playerPosition = world?.position ?? [0, 16];
+  const playerStyle = place(playerPosition[0], playerPosition[1]);
+
+  useEffect(() => {
+    if (stage < 4 && scene === 'echo') setScene(stage >= 2 ? 'grove' : 'meadow');
+    if (stage < 2 && scene === 'grove') setScene('meadow');
+  }, [stage, scene]);
+
+  const inspect = async (objectId: string) => {
+    if (busy) return;
+    const object = WORLD_OBJECTS.find((item) => item.id === objectId);
+    if (!object) return;
+    setSelected(objectId);
+    setDialogue('Your companion is making their way there…');
     const path = findWorldPath(
-      [position[0], position[1]],
+      [playerPosition[0], playerPosition[1]],
       [object.x, object.z],
       stage,
     );
     if (!path.length) {
-      notify('That path is blocked. Try another approach.');
+      setDialogue('There is no clear path from here.');
+      notify('That path is blocked. Try another route.');
       return;
     }
     const result = await act({ action: 'world_interact', path, objectId });
-    if (result) {
-      setSelected(null);
-      if (objectId === 'pip') navigate('shop');
-      if (objectId === 'well') navigate('gacha');
+    if (!result) return;
+
+    if (object.kind === 'npc') {
+      setDialogue(
+        object.id === 'edda'
+          ? 'Edda lowers her lantern. “You heard it too, didn’t you? The meadow is trying to remember.”'
+          : 'Vale brushes the dust from a piece of memory glass. “These fragments only make sense when the meadow is allowed to speak.”',
+      );
+    } else if (object.kind === 'shard') {
+      setDialogue('The glass warms beneath a paw. A tiny memory flickers across its surface.');
+    } else if (object.kind === 'tone') {
+      setDialogue('A soft note answers. One part of the tangled echo has heard you.');
+    } else if (object.kind === 'challenge') {
+      setDialogue('The tangled echo stirs. Three tones are waiting for an answer.');
+    } else if (object.kind === 'story') {
+      setDialogue('The listening lens catches a memory that does not belong to any single creature.');
+    } else if (object.kind === 'secret') {
+      setDialogue('Something old is hidden beneath the roots. The meadow has noticed your curiosity.');
+    } else {
+      setDialogue(`${object.name} responds to your companion's presence.`);
     }
+
+    if (objectId === 'pip') navigate('shop');
+    if (objectId === 'well') navigate('gacha');
+  };
+
+  const moveScene = (target: 'meadow' | 'grove' | 'echo') => {
+    setDialogue(null);
+    setSelected(null);
+    setScene(target);
   };
 
   return (
-    <section className="story-explorer" aria-label="FurEver story exploration">
-      <header className="story-explorer-heading">
+    <section className="story-adventure" aria-label="FurEver point and click adventure">
+      <header className="story-adventure-topbar">
         <div>
-          <span className="eyebrow">{sceneCopy.eyebrow}</span>
-          <h1>{sceneCopy.title}</h1>
-          <p>{sceneCopy.description}</p>
+          <span className="eyebrow">CHAPTER {Math.min(stage + 1, CHAPTERS.length)} · {scenes.eyebrow}</span>
+          <h1>{scenes.title}</h1>
+          <p>{scenes.description}</p>
         </div>
         <button className="secondary" onClick={() => navigate('profile')}>
           <BookOpen size={17} /> Journal
         </button>
       </header>
 
-      <div className="scene-switcher" role="tablist" aria-label="Story scenes">
-        <button
-          role="tab"
-          aria-selected={scene === 'meadow'}
-          onClick={() => setScene('meadow')}
-        >
-          Meadow
-        </button>
-        <button
-          role="tab"
-          aria-selected={scene === 'grove'}
-          disabled={stage < 2}
-          onClick={() => setScene('grove')}
-        >
-          Memory Grove
-        </button>
-        <button
-          role="tab"
-          aria-selected={scene === 'echo'}
-          disabled={stage < 4}
-          onClick={() => setScene('echo')}
-        >
-          Echo Garden
-        </button>
-      </div>
+      <div className={`point-click-scene point-click-${scene}`}>
+        <div className="scene-sky" />
+        <div className="scene-hills scene-hills-back" />
+        <div className="scene-hills scene-hills-front" />
+        <div className="scene-ground" />
+        <div className="scene-path scene-path-main" />
+        <div className="scene-path scene-path-side" />
+        <div className="scene-water" />
+        <div className="scene-ambient ambient-one" />
+        <div className="scene-ambient ambient-two" />
+        <div className="scene-ambient ambient-three" />
 
-      <div className={`story-scene story-scene-${scene}`}>
-        <div className="story-scene-art" aria-hidden="true" />
-        <div className="story-scene-vignette" aria-hidden="true" />
-        <div className="story-scene-pet">
-          <Pet pet={s.pet} audio={null} compact interactive={false} />
-        </div>
+        <div className="scene-building building-one"><span /></div>
+        <div className="scene-building building-two"><span /></div>
+        <div className="scene-tree tree-one"><i /><b /></div>
+        <div className="scene-tree tree-two"><i /><b /></div>
+        <div className="scene-tree tree-three"><i /><b /></div>
+        <div className="scene-tree tree-four"><i /><b /></div>
 
-        {available.map((object) => {
+        {sceneObjects.map((object) => {
           const collected = world?.collected.includes(object.id);
           const discovered = object.kind === 'secret' && world?.secrets.includes(object.id);
+          const pos = place(object.x, object.z);
+          const isCharacter = object.kind === 'npc';
+
           return (
             <button
               key={object.id}
-              className={`story-hotspot story-hotspot-${object.kind} ${collected || discovered ? 'collected' : ''}`}
-              style={{ left: `${((object.x + 32) / 64) * 100}%`, top: `${((32 - object.z) / 64) * 100}%` }}
+              className={`scene-object scene-object-${object.kind} ${isCharacter ? 'scene-character' : ''} ${selected === object.id ? 'is-selected' : ''} ${collected || discovered ? 'is-done' : ''}`}
+              style={pos}
               disabled={busy || !!collected || !!discovered}
-              onClick={() => setSelected(object.id)}
-              aria-label={object.name}
+              onClick={() => void inspect(object.id)}
+              aria-label={`Investigate ${object.name}`}
             >
-              <span className="hotspot-pulse" />
-              <strong>{object.kind === 'npc' ? object.name.split(' · ')[0] : object.name}</strong>
-              {!collected && !discovered && <small>Explore</small>}
+              {isCharacter ? (
+                <span className="character-sprite" aria-hidden="true">
+                  <i className="character-head" />
+                  <i className="character-body" />
+                  <i className="character-shadow" />
+                </span>
+              ) : (
+                <span className="environment-prop" aria-hidden="true" />
+              )}
+              <span className="scene-object-name">{object.name.split(' · ')[0]}</span>
+              <span className="scene-object-ring" />
             </button>
           );
         })}
 
-        <div className="story-scene-caption">
-          <strong>{s.pet?.name} is exploring</strong>
-          <span>Click a glowing object to investigate it. FurEver will guide your companion along the saved path.</span>
+        <div className="scene-player" style={playerStyle}>
+          <Pet pet={s.pet} audio={null} compact interactive={false} />
+          <span className="player-shadow" />
         </div>
+
+        <div className="scene-interaction-hint">
+          <strong>{selected ? 'Investigating…' : 'Explore the meadow'}</strong>
+          <span>Click a person, object, or path to interact.</span>
+        </div>
+
+        {scene !== 'meadow' && (
+          <button className="scene-exit scene-exit-left" onClick={() => moveScene(scene === 'echo' ? 'grove' : 'meadow')}>
+            <span>‹</span>
+            <small>{scene === 'echo' ? 'Memory Grove' : 'Town'}</small>
+          </button>
+        )}
+
+        {scenes.next && (
+          <button className="scene-exit scene-exit-right" onClick={() => moveScene(scenes.next!)}>
+            <span>›</span>
+            <small>{scenes.nextLabel}</small>
+          </button>
+        )}
+
+        {scene === 'meadow' && (
+          <button className="scene-exit scene-exit-bottom" onClick={() => moveScene('meadow')} aria-label="Follow the meadow path">
+            <span>Follow the path</span>
+          </button>
+        )}
+
+        {dialogue && (
+          <div className="scene-dialogue" role="status">
+            <div className="scene-dialogue-avatar">
+              <span />
+            </div>
+            <div>
+              <strong>{selected ? WORLD_OBJECTS.find((o) => o.id === selected)?.name.split(' · ')[0] : s.pet?.name}</strong>
+              <p>{dialogue}</p>
+            </div>
+            <button className="text-button" onClick={() => { setDialogue(null); setSelected(null); }}>
+              Close
+            </button>
+          </div>
+        )}
       </div>
 
-      {world?.challenge && (
-        <div className="echo-status panel">
-          <strong>Echo challenge · {world.challenge.nodes.length}/3 tones</strong>
-          <span>Answer all three before the 45-second window closes.</span>
-        </div>
-      )}
-
-      <Dialog open={!!selectedObject} onOpenChange={(v) => !v && setSelected(null)}>
-        <DialogContent className="game-dialog">
-          {selectedObject && (
-            <>
-              <DialogTitle>{selectedObject.name}</DialogTitle>
-              <DialogDescription>
-                {selectedObject.kind === 'npc'
-                  ? 'Someone here has something to tell you.'
-                  : selectedObject.kind === 'secret'
-                    ? 'Something hidden is waiting beneath the roots.'
-                    : selectedObject.kind === 'challenge'
-                      ? 'The tangled echo is listening.'
-                      : 'A small piece of the meadow story is waiting here.'}
-              </DialogDescription>
-              <button
-                className="primary"
-                disabled={busy}
-                onClick={() => void interact(selectedObject.id)}
-              >
-                Walk here and investigate <ArrowRight size={17} />
-              </button>
-              <button className="text-button" onClick={() => setSelected(null)}>
-                Not yet
-              </button>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <div className="story-adventure-footer">
+        <span>Chapter objective: {CHAPTERS[stage].objective}</span>
+        {world?.challenge && (
+          <strong>Echo tones: {world.challenge.nodes.length}/3</strong>
+        )}
+      </div>
     </section>
   );
 }
