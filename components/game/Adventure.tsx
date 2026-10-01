@@ -24,150 +24,171 @@ import { LOCATIONS } from '@/lib/game/catalog';
 import { progress } from '@/lib/game/progression';
 import { SectionTitle, type ScreenProps } from './shared';
 export function Explore({ state: s, act, busy, navigate }: ScreenProps) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const loc = selected ? LOCATIONS[selected - 1] : null,
-    e = s.expedition;
+  const world = s.world;
+  const stage = world?.stage ?? 0;
+  const [selected, setSelected] = useState<string | null>(null);
+  const [scene, setScene] = useState<'meadow' | 'grove' | 'echo'>(
+    stage >= 4 ? 'echo' : stage >= 2 ? 'grove' : 'meadow',
+  );
+  const selectedObject = selected
+    ? WORLD_OBJECTS.find((o) => o.id === selected)
+    : null;
+
+  const available = WORLD_OBJECTS.filter(
+    (o) => o.stage <= stage && (scene === 'meadow' || o.kind === 'shard' || o.kind === 'tone' || o.kind === 'challenge'),
+  ).filter((o) => {
+    if (o.kind === 'shard' && scene !== 'grove') return false;
+    if ((o.kind === 'tone' || o.kind === 'challenge') && scene !== 'echo') return false;
+    if (scene === 'meadow' && ['shard', 'tone', 'challenge'].includes(o.kind)) return false;
+    return true;
+  });
+
+  const sceneCopy = {
+    meadow: {
+      title: 'Whispering Meadow',
+      eyebrow: 'SCENE 01 · THE LISTENING TOWN',
+      description: CHAPTERS[stage].detail,
+    },
+    grove: {
+      title: 'Memory Grove',
+      eyebrow: 'SCENE 02 · WHERE THE MEADOW REMEMBERS',
+      description: 'Old glass catches the light beneath the roots. Three fragments are waiting.',
+    },
+    echo: {
+      title: 'Echo Garden',
+      eyebrow: 'SCENE 03 · THE TANGLED ECHO',
+      description: 'The air is quiet here. Listen for the three tones and answer them in time.',
+    },
+  }[scene];
+
+  const interact = async (objectId: string) => {
+    const object = WORLD_OBJECTS.find((o) => o.id === objectId);
+    if (!object || busy) return;
+    const position = world?.position || [0, 16];
+    const path = findWorldPath(
+      [position[0], position[1]],
+      [object.x, object.z],
+      stage,
+    );
+    if (!path.length) {
+      notify('That path is blocked. Try another approach.');
+      return;
+    }
+    const result = await act({ action: 'world_interact', path, objectId });
+    if (result) {
+      setSelected(null);
+      if (objectId === 'pip') navigate('shop');
+      if (objectId === 'well') navigate('gacha');
+    }
+  };
+
   return (
-    <>
-      <SectionTitle
-        eyebrow="BEYOND YOUR DOORSTEP"
-        title="A world worth wandering."
-        description="Ten places to discover. A thousand little reasons to keep going."
-      />
-      {e ? (
-        <section className="expedition panel">
-          <div
-            className="expedition-art"
-            style={{
-              backgroundPosition: `${LOCATIONS[e.location - 1].x}% ${LOCATIONS[e.location - 1].y}%`,
-            }}
-          />
-          <div>
-            <span className="eyebrow">ON THE TRAIL · {e.step}/3</span>
-            <h2>{LOCATIONS[e.location - 1].name}</h2>
-            <p>{LOCATIONS[e.location - 1].lore}</p>
-            <ol>
-              {e.finds.map((f) => (
-                <li key={f}>{f}</li>
-              ))}
-            </ol>
+    <section className="story-explorer" aria-label="FurEver story exploration">
+      <header className="story-explorer-heading">
+        <div>
+          <span className="eyebrow">{sceneCopy.eyebrow}</span>
+          <h1>{sceneCopy.title}</h1>
+          <p>{sceneCopy.description}</p>
+        </div>
+        <button className="secondary" onClick={() => navigate('profile')}>
+          <BookOpen size={17} /> Journal
+        </button>
+      </header>
+
+      <div className="scene-switcher" role="tablist" aria-label="Story scenes">
+        <button
+          role="tab"
+          aria-selected={scene === 'meadow'}
+          onClick={() => setScene('meadow')}
+        >
+          Meadow
+        </button>
+        <button
+          role="tab"
+          aria-selected={scene === 'grove'}
+          disabled={stage < 2}
+          onClick={() => setScene('grove')}
+        >
+          Memory Grove
+        </button>
+        <button
+          role="tab"
+          aria-selected={scene === 'echo'}
+          disabled={stage < 4}
+          onClick={() => setScene('echo')}
+        >
+          Echo Garden
+        </button>
+      </div>
+
+      <div className={`story-scene story-scene-${scene}`}>
+        <div className="story-scene-art" aria-hidden="true" />
+        <div className="story-scene-vignette" aria-hidden="true" />
+        <div className="story-scene-pet">
+          <Pet pet={s.pet} audio={null} compact interactive={false} />
+        </div>
+
+        {available.map((object) => {
+          const collected = world?.collected.includes(object.id);
+          const discovered = object.kind === 'secret' && world?.secrets.includes(object.id);
+          return (
             <button
-              className="primary"
-              disabled={busy}
-              onClick={() => void act({ action: 'explore_step', id: e.id })}
+              key={object.id}
+              className={`story-hotspot story-hotspot-${object.kind} ${collected || discovered ? 'collected' : ''}`}
+              style={{ left: `${((object.x + 32) / 64) * 100}%`, top: `${((32 - object.z) / 64) * 100}%` }}
+              disabled={busy || !!collected || !!discovered}
+              onClick={() => setSelected(object.id)}
+              aria-label={object.name}
             >
-              Follow the trail <ArrowRight size={17} />
+              <span className="hotspot-pulse" />
+              <strong>{object.kind === 'npc' ? object.name.split(' · ')[0] : object.name}</strong>
+              {!collected && !discovered && <small>Explore</small>}
             </button>
-            <button
-              className="text-button"
-              disabled={busy}
-              onClick={() => void act({ action: 'explore_cancel' })}
-            >
-              Return home
-            </button>
-          </div>
-        </section>
-      ) : (
-        <>
-          <div className="world-map">
-            <img
-              src="/assets/world-map.webp"
-              alt="FurEver’s magical world, from meadows to the Astral Wilds"
-            />
-            {LOCATIONS.map((l) => (
-              <button
-                className={`map-pin ${progress(s.xp).level < l.level ? 'locked' : ''}`}
-                style={{ left: `${l.x}%`, top: `${l.y}%` }}
-                aria-label={`${l.name}, level ${l.level}`}
-                key={l.id}
-                onClick={() => setSelected(l.id)}
-              >
-                {progress(s.xp).level < l.level ? (
-                  <Lock size={16} />
-                ) : (
-                  <Compass size={19} />
-                )}
-                <span>{l.name}</span>
-              </button>
-            ))}
-          </div>
-          <div className="locations-list">
-            {LOCATIONS.map((l) => (
-              <button key={l.id} onClick={() => setSelected(l.id)}>
-                <span className="location-index" style={{ color: l.color }}>
-                  {String(l.id).padStart(2, '0')}
-                </span>
-                <div>
-                  <strong>{l.name}</strong>
-                  <small>
-                    Level {l.level} · {l.enemy}
-                  </small>
-                </div>
-                {progress(s.xp).level < l.level ? (
-                  <Lock size={16} />
-                ) : (
-                  <ArrowRight size={17} />
-                )}
-              </button>
-            ))}
-          </div>
-        </>
+          );
+        })}
+
+        <div className="story-scene-caption">
+          <strong>{s.pet?.name} is exploring</strong>
+          <span>Click a glowing object to investigate it. FurEver will guide your companion along the saved path.</span>
+        </div>
+      </div>
+
+      {world?.challenge && (
+        <div className="echo-status panel">
+          <strong>Echo challenge · {world.challenge.nodes.length}/3 tones</strong>
+          <span>Answer all three before the 45-second window closes.</span>
+        </div>
       )}
-      <Dialog open={!!loc} onOpenChange={(v) => !v && setSelected(null)}>
+
+      <Dialog open={!!selectedObject} onOpenChange={(v) => !v && setSelected(null)}>
         <DialogContent className="game-dialog">
-          {loc && (
+          {selectedObject && (
             <>
-              <DialogTitle>{loc.name}</DialogTitle>
-              <DialogDescription>{loc.lore}</DialogDescription>
-              <div className="loot-preview">
-                <span>
-                  🧪 {loc.id}–{loc.id * 2} EXP elixirs
-                </span>
-                <span>
-                  ⚗️ {Math.max(1, Math.floor(loc.id / 2))}–{loc.id} growth
-                  nectars
-                </span>
-                <span>
-                  ◈ {loc.id * 30}–{loc.id * 60} PC
-                </span>
-              </div>
-              <p className="muted">
-                Requires level {loc.level} · 15 energy · Three discoveries
-              </p>
+              <DialogTitle>{selectedObject.name}</DialogTitle>
+              <DialogDescription>
+                {selectedObject.kind === 'npc'
+                  ? 'Someone here has something to tell you.'
+                  : selectedObject.kind === 'secret'
+                    ? 'Something hidden is waiting beneath the roots.'
+                    : selectedObject.kind === 'challenge'
+                      ? 'The tangled echo is listening.'
+                      : 'A small piece of the meadow story is waiting here.'}
+              </DialogDescription>
               <button
                 className="primary"
-                disabled={busy || progress(s.xp).level < loc.level}
-                onClick={async () => {
-                  const r = await act({
-                    action: 'explore_start',
-                    location: loc.id,
-                  });
-                  if (r) setSelected(null);
-                }}
+                disabled={busy}
+                onClick={() => void interact(selectedObject.id)}
               >
-                Explore with {s.pet?.name} <Compass size={17} />
+                Walk here and investigate <ArrowRight size={17} />
               </button>
-              <button
-                className="secondary"
-                disabled={busy || progress(s.xp).level < loc.level}
-                onClick={async () => {
-                  const r = await act({
-                    action: 'battle_start',
-                    location: loc.id,
-                  });
-                  if (r) {
-                    setSelected(null);
-                    navigate('battle');
-                  }
-                }}
-              >
-                Challenge {loc.enemy}
+              <button className="text-button" onClick={() => setSelected(null)}>
+                Not yet
               </button>
             </>
           )}
         </DialogContent>
       </Dialog>
-    </>
+    </section>
   );
 }
 export function Battle({ state: s, act, busy, navigate }: ScreenProps) {
