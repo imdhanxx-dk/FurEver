@@ -1052,3 +1052,46 @@ textarea {
     max-width: 230px;
   }
 }
+
+/* Scene-based story exploration */
+.story-explorer { display: grid; gap: 16px; }
+.story-explorer-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+.story-explorer-heading h1 { margin: 3px 0 5px; color: #405b43; font-size: clamp(2rem, 4vw, 3.1rem); }
+.story-explorer-heading p { margin: 0; max-width: 680px; color: #7b7762; }
+.scene-switcher { display: flex; gap: 8px; flex-wrap: wrap; }
+.scene-switcher button { padding: 9px 14px; border: 2px solid #d9c8a8; border-radius: 14px; background: #fff8e9; color: #6d674f; font-weight: 800; }
+.scene-switcher button[aria-selected='true'] { background: #e1ebd1; border-color: #b7c69b; color: #39705c; box-shadow: 0 3px 0 #d1dcc0; }
+.scene-switcher button:disabled { opacity: .45; cursor: not-allowed; }
+.story-scene { position: relative; min-height: min(72vh, 700px); overflow: hidden; border: 3px solid #c7ad7e; border-radius: 28px; background: #d8d8b9; box-shadow: 0 7px 0 #d9c4a0; isolation: isolate; }
+.story-scene-art { position: absolute; inset: 0; background: url('/assets/meadow-world.webp') center/cover; transform: scale(1.03); z-index: -3; }
+.story-scene-grove .story-scene-art { filter: saturate(.82) hue-rotate(12deg) brightness(.94); }
+.story-scene-echo .story-scene-art { filter: saturate(.7) hue-rotate(35deg) brightness(.78); }
+.story-scene-vignette { position: absolute; inset: 0; z-index: -2; background: radial-gradient(circle at 50% 42%, transparent 25%, #213b3426 72%, #172b2638); pointer-events: none; }
+.story-scene-pet { position: absolute; width: min(220px, 29%); left: 50%; top: 47%; transform: translate(-50%, -50%); filter: drop-shadow(0 12px 10px #3c382b44); pointer-events: none; }
+.story-scene-pet .articulated-pet { position: relative; inset: auto; height: 220px; }
+.story-hotspot { position: absolute; transform: translate(-50%, -50%); min-width: 76px; display: grid; justify-items: center; gap: 2px; padding: 7px 10px; border: 2px solid #fff8ddcc; border-radius: 15px; background: #496c5bd9; color: #fff8e8; box-shadow: 0 5px 14px #1d382c44; backdrop-filter: blur(5px); transition: transform .16s ease, background .16s ease; }
+.story-hotspot:hover { transform: translate(-50%, -50%) scale(1.08); background: #397d6df2; }
+.story-hotspot strong { font-size: .78rem; white-space: nowrap; }
+.story-hotspot small { font-size: .64rem; opacity: .82; }
+.hotspot-pulse { position: absolute; inset: -7px; border: 2px solid #fff2b980; border-radius: 19px; animation: story-pulse 1.8s ease-out infinite; pointer-events: none; }
+.story-hotspot.collected { opacity: .35; filter: grayscale(.7); }
+.story-hotspot-npc { background: #8b6455e8; }
+.story-hotspot-secret { background: #78629be8; }
+.story-hotspot-challenge { background: #71505fe8; }
+.story-scene-caption { position: absolute; left: 18px; right: 18px; bottom: 18px; max-width: 540px; padding: 12px 15px; border: 1px solid #fff1d477; border-radius: 16px; background: #243c34c9; color: #fff8e8; backdrop-filter: blur(8px); }
+.story-scene-caption strong, .story-scene-caption span { display: block; }
+.story-scene-caption strong { font-size: .9rem; }
+.story-scene-caption span { margin-top: 3px; font-size: .75rem; opacity: .84; }
+.echo-status { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+.echo-status span { color: #817761; font-size: .85rem; }
+@keyframes story-pulse { 0% { opacity: .8; transform: scale(.88); } 70%,100% { opacity: 0; transform: scale(1.16); } }
+@media (max-width: 700px) {
+  .story-explorer-heading { align-items: start; flex-direction: column; }
+  .story-scene { min-height: 590px; border-radius: 22px; }
+  .story-scene-pet { width: 38%; }
+  .story-scene-pet .articulated-pet { height: 180px; }
+  .story-hotspot { min-width: 62px; padding: 6px 7px; }
+  .story-hotspot strong { font-size: .68rem; }
+  .story-scene-caption { left: 10px; right: 10px; bottom: 10px; }
+  .echo-status { align-items: start; flex-direction: column; }
+}
