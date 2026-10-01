@@ -12,6 +12,7 @@ import {
   Sparkles,
   Zap,
   Heart,
+  BookOpen,
 } from 'lucide-react';
 import {
   Dialog,
@@ -21,9 +22,10 @@ import {
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { LOCATIONS } from '@/lib/game/catalog';
+import { CHAPTERS, WORLD_OBJECTS, findWorldPath } from '@/lib/game/world';
 import { progress } from '@/lib/game/progression';
 import { SectionTitle, type ScreenProps } from './shared';
-export function Explore({ state: s, act, busy, navigate }: ScreenProps) {
+export function Explore({ state: s, act, busy, navigate, notify }: ScreenProps) {
   const world = s.world;
   const stage = world?.stage ?? 0;
   const [selected, setSelected] = useState<string | null>(null);
